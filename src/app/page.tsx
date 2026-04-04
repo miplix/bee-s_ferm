@@ -8,19 +8,32 @@ import { connectWallet, disconnectWallet, tryRestoreSession } from "@/lib/near";
 
 type Screen = "connect" | "welcome" | "game";
 
+const SCREEN_KEY = "farm_last_screen";
+
 export default function Home() {
   const [screen, setScreen] = useState<Screen>("connect");
   const [accountId, setAccountId] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(false);
 
-  // Try to restore session on mount
+  // Restore session + last screen on mount
   useEffect(() => {
     tryRestoreSession().then((id) => {
       if (id) {
         setAccountId(id);
-        setScreen("welcome");
+        const lastScreen = localStorage.getItem(SCREEN_KEY) as Screen | null;
+        setScreen(lastScreen === "game" ? "game" : "welcome");
       }
     });
+  }, []);
+
+  // Persist screen changes
+  const changeScreen = useCallback((s: Screen) => {
+    setScreen(s);
+    if (s !== "connect") {
+      localStorage.setItem(SCREEN_KEY, s);
+    } else {
+      localStorage.removeItem(SCREEN_KEY);
+    }
   }, []);
 
   const handleConnect = useCallback(async () => {
@@ -29,28 +42,28 @@ export default function Home() {
       const id = await connectWallet();
       if (id) {
         setAccountId(id);
-        setScreen("welcome");
+        changeScreen("welcome");
       }
     } catch (err) {
       console.error("Connection failed:", err);
     } finally {
       setConnecting(false);
     }
-  }, []);
+  }, [changeScreen]);
 
   const handleDisconnect = useCallback(async () => {
     await disconnectWallet();
     setAccountId(null);
-    setScreen("connect");
-  }, []);
+    changeScreen("connect");
+  }, [changeScreen]);
 
   const handlePlay = useCallback(() => {
-    setScreen("game");
-  }, []);
+    changeScreen("game");
+  }, [changeScreen]);
 
   const handleOpenMenu = useCallback(() => {
-    setScreen("welcome");
-  }, []);
+    changeScreen("welcome");
+  }, [changeScreen]);
 
   if (screen === "connect" || !accountId) {
     return <ConnectScreen onConnect={handleConnect} loading={connecting} />;
@@ -60,13 +73,7 @@ export default function Home() {
     return (
       <WelcomeScreen
         accountId={accountId}
-        inventory={[
-          { item_type: "fence", count: 5 },
-          { item_type: "flower_bed", count: 3 },
-          { item_type: "campfire", count: 1 },
-          { item_type: "chest", count: 2 },
-          { item_type: "scarecrow", count: 1 },
-        ]}
+        inventory={[]}
         onPlay={handlePlay}
         onDisconnect={handleDisconnect}
       />
