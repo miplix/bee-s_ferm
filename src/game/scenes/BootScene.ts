@@ -6,12 +6,13 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload() {
-    // Generate placeholder textures (replace with real assets later)
     this.generateTextures();
   }
 
   create() {
-    this.scene.start("FarmScene");
+    // BootScene receives sceneData from GameCanvas via registry
+    const sceneData = this.registry.get("farmSceneData");
+    this.scene.start("FarmScene", sceneData);
   }
 
   private generateTextures() {

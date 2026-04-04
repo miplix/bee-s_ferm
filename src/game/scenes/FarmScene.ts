@@ -115,6 +115,15 @@ export class FarmScene extends Phaser.Scene {
     const worldX = pointer.worldX;
     const worldY = pointer.worldY;
 
+    // If in placement mode, place the object
+    if (this.placementCallback) {
+      const gridX = Math.floor(worldX / TILE_SIZE);
+      const gridY = Math.floor(worldY / TILE_SIZE);
+      this.placementCallback(gridX, gridY);
+      this.exitPlacementMode();
+      return;
+    }
+
     // Check if clicking on a placed object to harvest
     for (const [id, sprite] of this.placedSprites) {
       const dist = Phaser.Math.Distance.Between(worldX, worldY, sprite.x, sprite.y);
@@ -225,5 +234,35 @@ export class FarmScene extends Phaser.Scene {
       label.destroy();
       this.nameLabels.delete(accountId);
     }
+  }
+
+  // === Placement mode ===
+  private placementCallback?: (gridX: number, gridY: number) => void;
+  private placementPreview?: Phaser.GameObjects.Sprite;
+
+  enterPlacementMode(objectType: string, callback: (gridX: number, gridY: number) => void) {
+    this.placementCallback = callback;
+
+    // Show a ghost preview following the mouse
+    this.placementPreview = this.add.sprite(0, 0, objectType);
+    this.placementPreview.setAlpha(0.5);
+    this.placementPreview.setDepth(50);
+
+    this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
+      if (!this.placementPreview) return;
+      const gridX = Math.floor(pointer.worldX / TILE_SIZE);
+      const gridY = Math.floor(pointer.worldY / TILE_SIZE);
+      this.placementPreview.setPosition(
+        gridX * TILE_SIZE + TILE_SIZE / 2,
+        gridY * TILE_SIZE + TILE_SIZE / 2
+      );
+    });
+  }
+
+  exitPlacementMode() {
+    this.placementCallback = undefined;
+    this.placementPreview?.destroy();
+    this.placementPreview = undefined;
+    this.input.off("pointermove");
   }
 }

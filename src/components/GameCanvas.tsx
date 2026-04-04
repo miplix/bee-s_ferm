@@ -1,20 +1,26 @@
 "use client";
 
-import { useEffect, useRef, useCallback, useState } from "react";
-import type { Player, PlacedObject, PlayerPresence } from "@/types";
-import { getPlacedObjects, updatePlayerPosition, updatePlayerResources, broadcastPosition, subscribeToPresence } from "@/lib/db";
+import { useEffect, useRef, useCallback } from "react";
+import type { Player, PlayerPresence } from "@/types";
+import {
+  getPlacedObjects,
+  updatePlayerPosition,
+  updatePlayerResources,
+  broadcastPosition,
+  subscribeToPresence,
+} from "@/lib/db";
 import { supabase } from "@/lib/supabase";
-import { FarmScene } from "@/game/scenes/FarmScene";
 
 interface Props {
   player: Player;
   onResourcesChange: (r: Record<string, number>) => void;
+  onMapClick?: (gridX: number, gridY: number) => void;
+  gameRef?: React.MutableRefObject<any>;
 }
 
-export default function GameCanvas({ player, onResourcesChange }: Props) {
+export default function GameCanvas({ player, onResourcesChange, gameRef: externalGameRef }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
-  const [ready, setReady] = useState(false);
 
   const handleResourceChange = useCallback(
     (resources: Record<string, number>) => {
@@ -35,10 +41,12 @@ export default function GameCanvas({ player, onResourcesChange }: Props) {
     if (!containerRef.current || gameRef.current) return;
 
     let destroyed = false;
+    let presenceChannel: ReturnType<typeof supabase.channel> | null = null;
 
     async function init() {
       const Phaser = (await import("phaser")).default;
       const { BootScene } = await import("@/game/scenes/BootScene");
+      const { FarmScene } = await import("@/game/scenes/FarmScene");
 
       if (destroyed) return;
 
@@ -54,54 +62,41 @@ export default function GameCanvas({ player, onResourcesChange }: Props) {
         physics: { default: "arcade" },
       });
 
+      // Pass data via registry so BootScene can forward it to FarmScene
+      game.registry.set("farmSceneData", {
+        accountId: player.account_id,
+        playerX: player.x,
+        playerY: player.y,
+        placedObjects,
+        resources: player.resources,
+        onResourceChange: handleResourceChange,
+        onPositionChange: handlePositionChange,
+      });
+
       gameRef.current = game;
+      if (externalGameRef) externalGameRef.current = game;
 
-      // Pass data to FarmScene once BootScene transitions
-      game.events.on("ready", () => {
-        const farmScene = game.scene.getScene("FarmScene") as FarmScene;
-        if (farmScene) {
-          farmScene.scene.restart({
-            accountId: player.account_id,
-            playerX: player.x,
-            playerY: player.y,
-            placedObjects,
-            resources: player.resources,
-            onResourceChange: handleResourceChange,
-            onPositionChange: handlePositionChange,
-          });
-        }
-      });
-
-      // Wait for FarmScene to be active, then set up presence
-      game.events.once("step", () => {
-        setupPresence(game);
-      });
-
-      setReady(true);
-    }
-
-    function setupPresence(game: Phaser.Game) {
-      const channel = supabase.channel("game:presence");
+      // Set up multiplayer presence
+      presenceChannel = supabase.channel("game:presence");
 
       subscribeToPresence(
         (p: PlayerPresence) => {
           if (p.account_id === player.account_id) return;
-          const scene = game.scene.getScene("FarmScene") as FarmScene;
+          const scene = game.scene.getScene("FarmScene") as any;
           scene?.updateOtherPlayer(p);
         },
         (accountId: string) => {
-          const scene = game.scene.getScene("FarmScene") as FarmScene;
+          const scene = game.scene.getScene("FarmScene") as any;
           scene?.removeOtherPlayer(accountId);
         },
         (p: PlayerPresence) => {
           if (p.account_id === player.account_id) return;
-          const scene = game.scene.getScene("FarmScene") as FarmScene;
+          const scene = game.scene.getScene("FarmScene") as any;
           scene?.updateOtherPlayer(p);
         }
       );
 
-      // Track own presence
-      broadcastPosition(channel, {
+      broadcastPosition(presenceChannel, {
         account_id: player.account_id,
         x: player.x,
         y: player.y,
@@ -113,12 +108,15 @@ export default function GameCanvas({ player, onResourcesChange }: Props) {
 
     return () => {
       destroyed = true;
+      if (presenceChannel) {
+        supabase.removeChannel(presenceChannel);
+      }
       gameRef.current?.destroy(true);
       gameRef.current = null;
     };
   }, [player, handleResourceChange, handlePositionChange]);
 
-  // Handle resize
+  // Handle window resize
   useEffect(() => {
     const onResize = () => {
       gameRef.current?.scale.resize(window.innerWidth, window.innerHeight);
