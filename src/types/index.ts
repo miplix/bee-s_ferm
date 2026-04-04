@@ -22,8 +22,12 @@ export interface PlacedObject {
   object_type: string;
   grid_x: number;
   grid_y: number;
-  is_scenery: boolean; // trees, rocks — can't move, must destroy
-  destroy_progress?: number; // 0-100, when 100 → drops resource
+  is_scenery: boolean;
+  destroy_progress?: number;
+  // Crop fields
+  crop?: string;           // planted crop type
+  plantedAt?: number;      // timestamp when planted
+  growthDuration?: number;  // ms to grow
 }
 
 // === Dropped resource on the ground ===
@@ -42,18 +46,22 @@ export interface ItemDef {
   emoji: string;
   color: string;
   placeable: boolean;
-  destroyTime: number; // ms to destroy (0 = instant pickup)
-  dropType?: string;   // what resource drops when destroyed
+  destroyTime: number;
+  dropType?: string;
   dropAmount?: number;
+  isField?: boolean; // this is a plantable field
 }
 
-// === Game state ===
-export interface GameState {
-  player: Player;
-  grid: (PlacedObject | null)[][];
-  drops: DroppedResource[];
-  mode: "idle" | "placing" | "moving";
-  selectedInventoryItem: string | null;
-  selectedObject: PlacedObject | null;
-  placementPreview: { x: number; y: number; valid: boolean } | null;
+// === Crop definition ===
+export interface CropDef {
+  type: string;
+  name: string;
+  emoji: string;
+  seedEmoji: string;
+  growthTime: number;  // ms
+  seedPrice: number;   // coins to buy seed
+  sellPrice: number;   // coins when selling harvest
+  harvestAmount: number;
+  xp: number;
+  stages: string[];    // emoji per growth stage
 }
