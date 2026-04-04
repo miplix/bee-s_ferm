@@ -27,6 +27,17 @@ function getConnector(): any {
     connector = new lib.NearConnector({
       network: "mainnet",
       footerBranding: null,
+      // WalletConnect is REQUIRED for most wallets (Meteor, MyNearWallet, Nightly, etc.)
+      // Without it only HOT Wallet works
+      walletConnect: {
+        projectId: "1292473190ce7eb75c9de67e15aaad99",
+        metadata: {
+          name: "NEAR Farm",
+          description: "2D farming game on NEAR blockchain",
+          url: window.location.origin || "https://near-farm.vercel.app",
+          icons: [],
+        },
+      },
     });
     window._nearConnector = connector;
   } catch (e) {
