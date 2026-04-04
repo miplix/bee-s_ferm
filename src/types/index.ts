@@ -5,37 +5,55 @@ export interface Player {
   x: number;
   y: number;
   resources: Record<string, number>;
+  inventory: InventoryStack[];
+  placed_objects: PlacedObject[];
   last_seen: string;
 }
 
-// === Placed objects on player's farm ===
+// === Inventory: stacked items ===
+export interface InventoryStack {
+  item_type: string;
+  count: number;
+}
+
+// === Object placed on the farm grid ===
 export interface PlacedObject {
   id: string;
-  owner_id: string;
-  nft_token_id: string;
   object_type: string;
   grid_x: number;
   grid_y: number;
-  state: Record<string, unknown>;
-  placed_at: string;
+  is_scenery: boolean; // trees, rocks — can't move, must destroy
+  destroy_progress?: number; // 0-100, when 100 → drops resource
 }
 
-// === Inventory item (NFT reference) ===
-export interface InventoryItem {
-  token_id: string;
+// === Dropped resource on the ground ===
+export interface DroppedResource {
+  id: string;
+  resource_type: string;
+  amount: number;
+  grid_x: number;
+  grid_y: number;
+}
+
+// === Item definitions ===
+export interface ItemDef {
+  type: string;
   name: string;
-  icon: string;
-  object_type: string; // "tree", "mine", "field", etc.
-  metadata: Record<string, unknown>;
+  emoji: string;
+  color: string;
+  placeable: boolean;
+  destroyTime: number; // ms to destroy (0 = instant pickup)
+  dropType?: string;   // what resource drops when destroyed
+  dropAmount?: number;
 }
 
-// === Resource types ===
-export type ResourceType = "wood" | "stone" | "gold" | "wheat" | "iron";
-
-// === Game events for realtime ===
-export interface PlayerPresence {
-  account_id: string;
-  x: number;
-  y: number;
-  display_name: string;
+// === Game state ===
+export interface GameState {
+  player: Player;
+  grid: (PlacedObject | null)[][];
+  drops: DroppedResource[];
+  mode: "idle" | "placing" | "moving";
+  selectedInventoryItem: string | null;
+  selectedObject: PlacedObject | null;
+  placementPreview: { x: number; y: number; valid: boolean } | null;
 }
