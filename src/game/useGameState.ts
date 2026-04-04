@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import type { PlacedObject, DroppedResource, InventoryStack } from "@/types";
 import { GRID_COLS, GRID_ROWS, ITEM_DEFS, CROP_DEFS, RESOURCE_DEFS, generateInitialScenery, STARTING_COINS } from "./config";
 
@@ -19,16 +19,40 @@ export interface FarmState {
   destroyTimer: number | null;
   menuOpen: boolean;
   shopOpen: boolean;
-  plantingCrop: string | null; // crop type being planted
+  plantingCrop: string | null;
 }
 
-function initState(): FarmState {
+// === Saveable subset (no UI state) ===
+interface SaveData {
+  objects: PlacedObject[];
+  drops: DroppedResource[];
+  inventory: InventoryStack[];
+  coins: number;
+  xp: number;
+}
+
+function saveKey(accountId: string) { return `farm_save__${accountId}`; }
+
+function loadSave(accountId: string): SaveData | null {
+  try {
+    const raw = localStorage.getItem(saveKey(accountId));
+    if (!raw) return null;
+    return JSON.parse(raw) as SaveData;
+  } catch { return null; }
+}
+
+function writeSave(accountId: string, data: SaveData) {
+  try {
+    localStorage.setItem(saveKey(accountId), JSON.stringify(data));
+  } catch { /* quota exceeded — ignore */ }
+}
+
+function createNewFarm(): SaveData {
   const sceneryDefs = generateInitialScenery();
   const objects: PlacedObject[] = sceneryDefs.map((s) => ({
     id: uid(), object_type: s.type, grid_x: s.x, grid_y: s.y,
     is_scenery: s.type !== "field",
   }));
-
   return {
     objects, drops: [],
     inventory: [
@@ -36,15 +60,49 @@ function initState(): FarmState {
       { item_type: "field", count: 3 },
       { item_type: "scarecrow", count: 1 },
     ],
-    coins: STARTING_COINS,
-    xp: 0,
+    coins: STARTING_COINS, xp: 0,
+  };
+}
+
+function initState(accountId: string): FarmState {
+  const save = loadSave(accountId) || createNewFarm();
+  return {
+    ...save,
     mode: "idle", selectedItem: null, selectedObject: null,
     destroyTimer: null, menuOpen: false, shopOpen: false, plantingCrop: null,
   };
 }
 
-export function useGameState() {
-  const [state, setState] = useState<FarmState>(initState);
+export function useGameState(accountId: string) {
+  const [state, setState] = useState<FarmState>(() => initState(accountId));
+  const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Auto-save on every state change (debounced 500ms)
+  useEffect(() => {
+    if (saveTimeout.current) clearTimeout(saveTimeout.current);
+    saveTimeout.current = setTimeout(() => {
+      writeSave(accountId, {
+        objects: state.objects,
+        drops: state.drops,
+        inventory: state.inventory,
+        coins: state.coins,
+        xp: state.xp,
+      });
+    }, 500);
+    return () => { if (saveTimeout.current) clearTimeout(saveTimeout.current); };
+  }, [accountId, state.objects, state.drops, state.inventory, state.coins, state.xp]);
+
+  // Save on page unload
+  useEffect(() => {
+    const onUnload = () => {
+      writeSave(accountId, {
+        objects: state.objects, drops: state.drops,
+        inventory: state.inventory, coins: state.coins, xp: state.xp,
+      });
+    };
+    window.addEventListener("beforeunload", onUnload);
+    return () => window.removeEventListener("beforeunload", onUnload);
+  }, [accountId, state]);
 
   // === INVENTORY ===
   const startPlacing = useCallback((itemType: string) => {
@@ -78,7 +136,7 @@ export function useGameState() {
     setState((s) => {
       const obj = s.objects.find((o) => o.id === objId);
       if (!obj || obj.is_scenery) return s;
-      if (obj.crop) return s; // can't pickup field with crop
+      if (obj.crop) return s;
       const inv = [...s.inventory];
       const ex = inv.find((i) => i.item_type === obj.object_type);
       if (ex) ex.count += 1; else inv.push({ item_type: obj.object_type, count: 1 });
@@ -86,7 +144,7 @@ export function useGameState() {
     });
   }, []);
 
-  // === DESTROY SCENERY ===
+  // === DESTROY ===
   const startDestroy = useCallback((objId: string) => {
     setState((s) => {
       const obj = s.objects.find((o) => o.id === objId);
@@ -142,11 +200,9 @@ export function useGameState() {
     setState((s) => {
       const field = s.objects.find((o) => o.id === fieldId);
       if (!field || field.crop) return s;
-      const def = ITEM_DEFS[field.object_type];
-      if (!def?.isField) return s;
+      if (!ITEM_DEFS[field.object_type]?.isField) return s;
       const cropDef = CROP_DEFS[cropType];
       if (!cropDef) return s;
-      // Check if player has seeds
       const seedKey = `${cropType}_seed`;
       const seedStack = s.inventory.find((i) => i.item_type === seedKey);
       if (!seedStack || seedStack.count < 1) return s;
@@ -163,8 +219,7 @@ export function useGameState() {
     setState((s) => {
       const field = s.objects.find((o) => o.id === fieldId);
       if (!field?.crop || !field.plantedAt || !field.growthDuration) return s;
-      const elapsed = Date.now() - field.plantedAt;
-      if (elapsed < field.growthDuration) return s; // not ready
+      if (Date.now() - field.plantedAt < field.growthDuration) return s;
       const cropDef = CROP_DEFS[field.crop];
       if (!cropDef) return s;
       const harvestKey = `${field.crop}_harvest`;

@@ -22,7 +22,7 @@ export default function GameScreen({ accountId, onDisconnect, onOpenMenu }: Prop
     selectObject, closeMenu, pickupObject, startDestroy,
     completeDestroy, collectDrop, startMoving, confirmMove,
     plantCrop, harvestCrop, toggleShop, buySeed, buyItem, sellItem,
-  } = useGameState();
+  } = useGameState(accountId);
 
   const handleCellClick = useCallback((x: number, y: number) => {
     if (state.mode === "placing") confirmPlacement(x, y);
