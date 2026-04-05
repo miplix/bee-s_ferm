@@ -72,6 +72,11 @@ export default function GameScreen({ accountId, onDisconnect }: Props) {
   useEffect(() => {
     if (nftLoaded) return;
     setNftLoaded(true);
+
+    // Read placed objects from save DIRECTLY (not from state which may be stale)
+    const save = loadSave(accountId);
+    const savedPlaced = save?.placed || [];
+
     fetch(`/api/nft?owner=${encodeURIComponent(accountId)}`)
       .then((r) => r.json())
       .then((data: { items: NftItem[] }) => {
@@ -96,22 +101,22 @@ export default function GameScreen({ accountId, onDisconnect }: Props) {
         }
         const nftInventory = Array.from(stacks.values());
 
-        // Merge with saved: subtract placed items
-        setInventory((prev) => {
-          // Count how many of each type are placed on the map
-          const placedCounts = new Map<string, number>();
-          for (const p of placed) {
-            placedCounts.set(p.item_type, (placedCounts.get(p.item_type) || 0) + 1);
-          }
-          // Adjust NFT counts
-          return nftInventory.map((stack) => {
-            const usedOnMap = placedCounts.get(stack.item_type) || 0;
-            return { ...stack, count: Math.max(0, stack.count - usedOnMap) };
-          }).filter((s) => s.count > 0);
-        });
+        // Count how many of each type are placed on the map
+        const placedCounts = new Map<string, number>();
+        for (const p of savedPlaced) {
+          placedCounts.set(p.item_type, (placedCounts.get(p.item_type) || 0) + 1);
+        }
+
+        // Subtract placed from NFT counts
+        const adjusted = nftInventory.map((stack) => {
+          const usedOnMap = placedCounts.get(stack.item_type) || 0;
+          return { ...stack, count: Math.max(0, stack.count - usedOnMap) };
+        }).filter((s) => s.count > 0);
+
+        setInventory(adjusted);
       })
       .catch(() => {});
-  }, [accountId, nftLoaded, placed]);
+  }, [accountId, nftLoaded]);
 
   // === HELPERS ===
   const isOccupied = useCallback((x: number, y: number, excludeId?: string) => {
