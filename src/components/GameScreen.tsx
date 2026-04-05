@@ -248,20 +248,28 @@ export default function GameScreen({ accountId, onDisconnect }: Props) {
 
       {/* QUICKBAR */}
       <div className="absolute right-3 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-1.5">
-        {[0, 1, 2].map((i) => {
-          const itemType = quickbar[i];
-          const item = inventory.find((s) => s.item_type === itemType);
-          return (
-            <div key={i} className="w-10 h-10 bg-white/5 border border-white/10 rounded-lg flex items-center justify-center backdrop-blur overflow-hidden cursor-pointer"
-              onClick={() => item && startPlacing(item)}>
-              {item?.image ? (
+        {(() => {
+          // Only show quickbar items that still exist in inventory
+          const activeItems = quickbar
+            .map((t) => inventory.find((s) => s.item_type === t))
+            .filter((item): item is InventoryStack => !!item && item.count > 0)
+            .slice(0, 3);
+          if (activeItems.length === 0) return null;
+          return activeItems.map((item, i) => (
+            <div key={item.item_type}
+              className="relative w-10 h-10 bg-white/5 border border-white/10 rounded-lg flex items-center justify-center backdrop-blur overflow-hidden cursor-pointer hover:bg-white/10 transition-colors"
+              onClick={() => startPlacing(item)}>
+              {item.image ? (
                 <img src={item.image} alt="" className="w-full h-full object-cover rounded-md opacity-70" />
               ) : (
-                <span className="text-gray-600 text-xs">—</span>
+                <span className="text-gray-400 text-[8px]">{item.name.slice(0, 6)}</span>
               )}
+              <span className="absolute -top-0.5 -right-0.5 bg-amber-600 text-white text-[8px] font-bold rounded-full min-w-[14px] h-[14px] flex items-center justify-center px-0.5">
+                {item.count}
+              </span>
             </div>
-          );
-        })}
+          ));
+        })()}
       </div>
 
       {/* PLACEMENT / SELECTION BAR */}
