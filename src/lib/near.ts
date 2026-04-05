@@ -1,105 +1,58 @@
 "use client";
 
-// We use the near-connect bundle loaded via <script> tag (same as 2048 project)
-// It exposes window.NearConnectLib with NearConnector class
+let selector: any = null;
+let selectorUI: any = null;
+let signInResolve: ((id: string | null) => void) | null = null;
 
-declare global {
-  interface Window {
-    NearConnectLib?: {
-      NearConnector: new (options?: any) => any;
-    };
-    _nearConnector?: any;
-  }
+async function init() {
+  if (selector) return;
+
+  const { WalletSelector, WalletSelectorUI } = await import("@hot-labs/near-connect");
+  const { SignClient } = await import("@walletconnect/sign-client");
+
+  const walletConnect = SignClient.init({
+    projectId: "1292473190ce7eb75c9de67e15aaad99",
+    metadata: {
+      name: "NEAR Farm",
+      description: "2D farming game on NEAR",
+      url: typeof window !== "undefined" ? window.location.origin : "",
+      icons: [],
+    },
+  });
+
+  selector = new WalletSelector({
+    network: "mainnet",
+    footerBranding: null,
+    walletConnect,
+  } as any);
+
+  selectorUI = new WalletSelectorUI(selector);
+
+  selector.on("wallet:signIn", (t: any) => {
+    const accountId = t.accounts?.[0]?.accountId ?? null;
+    if (accountId) localStorage.setItem("nearAccountId", accountId);
+    if (signInResolve) { signInResolve(accountId); signInResolve = null; }
+  });
 }
 
-let connector: any = null;
-
-function getConnector(): any {
-  if (connector) return connector;
-
-  const lib = window.NearConnectLib;
-  if (!lib || !lib.NearConnector) {
-    console.error("NearConnectLib not loaded. Check that near-connect.bundle.js is included.");
-    return null;
-  }
-
-  try {
-    connector = new lib.NearConnector({
-      network: "mainnet",
-      footerBranding: null,
-      // WalletConnect is REQUIRED for most wallets (Meteor, MyNearWallet, Nightly, etc.)
-      // Without it only HOT Wallet works
-      walletConnect: {
-        projectId: "1292473190ce7eb75c9de67e15aaad99",
-        metadata: {
-          name: "NEAR Farm",
-          description: "2D farming game on NEAR blockchain",
-          url: window.location.origin || "https://near-farm.vercel.app",
-          icons: [],
-        },
-      },
-    });
-    window._nearConnector = connector;
-  } catch (e) {
-    console.error("NearConnector init error", e);
-    return null;
-  }
-
-  return connector;
-}
-
-// Try to restore existing wallet session
 export async function tryRestoreSession(): Promise<string | null> {
-  // Check localStorage first (fast path)
   if (typeof window === "undefined") return null;
-  const saved = localStorage.getItem("nearAccountId");
-  if (saved) return saved;
-  return null;
+  return localStorage.getItem("nearAccountId");
 }
 
-export function connectWallet(): Promise<string | null> {
+export async function connectWallet(): Promise<string | null> {
+  await init();
   return new Promise((resolve) => {
-    const c = getConnector();
-    if (!c) {
-      resolve(null);
-      return;
-    }
-
-    // Listen for signIn — same pattern as working 2048 project
-    c.on("wallet:signIn", (t: any) => {
-      const accountId = t.accounts?.[0]?.accountId ?? null;
-      if (accountId) {
-        localStorage.setItem("nearAccountId", accountId);
-      }
-      resolve(accountId);
-    });
-
-    // Do NOT await — connect() just opens the wallet selector modal
-    // Result comes through the event above
-    c.connect().catch(() => {});
+    signInResolve = resolve;
+    selectorUI?.open();
   });
 }
 
 export async function disconnectWallet(): Promise<void> {
   if (typeof window === "undefined") return;
   localStorage.removeItem("nearAccountId");
-
-  const c = getConnector();
-  if (!c) return;
-
   try {
-    const wallet = await c.wallet();
-    if (wallet) {
-      await wallet.signOut();
-    }
-  } catch {
-    // already disconnected
-  }
-  connector = null;
-  window._nearConnector = undefined;
-}
-
-export async function getAccountId(): Promise<string | null> {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("nearAccountId");
+    await init();
+    await selector?.disconnect();
+  } catch {}
 }
