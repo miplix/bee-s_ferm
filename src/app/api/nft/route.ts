@@ -4,6 +4,14 @@ const API_KEY = "j9mwYHIkRsmhM7dOoJy9yBSEdSZSWtBw02BOIGy3jzk";
 const CONTRACT = "yuplandshop.mintbase1.near";
 const IPFS_GW = "https://gateway.dialog-tbot.com/ipfs";
 
+function resolveMedia(media: string | null): string | null {
+  if (!media) return null;
+  if (media.startsWith("http")) return media;
+  if (media.startsWith("Qm") || media.startsWith("bafy")) return `${IPFS_GW}/${media}`;
+  // Arweave hash
+  return `https://arweave.net/${media}`;
+}
+
 export async function GET(req: NextRequest) {
   const owner = req.nextUrl.searchParams.get("owner");
   if (!owner) return NextResponse.json({ items: [] }, { status: 400 });
@@ -22,7 +30,7 @@ export async function GET(req: NextRequest) {
       .map((item: any) => ({
         token_id: item.token_id,
         title: item.title,
-        media: item.media ? `${IPFS_GW}/${item.media}` : null,
+        media: resolveMedia(item.media),
       }));
 
     return NextResponse.json({ items: filtered });
