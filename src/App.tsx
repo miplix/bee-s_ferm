@@ -1,6 +1,6 @@
 import { useState, useEffect, type ReactNode } from "react";
 import { useGame, type Cell } from "./hooks/useGame";
-import { CROPS, RECIPES, LEVELS, getLevel, RESOURCE_NODES, EXPANSIONS, TOOLS, BUILDINGS, CHICKEN_LEVELS, COW_LEVELS, BEEHIVE_ACTION_INTERVAL, BEEHIVE_ACTIONS_TO_UPGRADE, BEEHIVE_DAILY_POLLEN, maxBeehiveSlots, ITEM_SELL } from "./data/crops";
+import { CROPS, RECIPES, LEVELS, getLevel, RESOURCE_NODES, EXPANSIONS, TOOLS, BUILDINGS, CHICKEN_LEVELS, COW_LEVELS, BEEHIVE_ACTION_INTERVAL, BEEHIVE_ACTIONS_TO_UPGRADE, BEEHIVE_DAILY_POLLEN, maxBeehiveSlots, ITEM_SELL, getShopStock } from "./data/crops";
 
 const CS = 52;
 function fmt(ms: number) { if (ms <= 0) return "✅"; const s = Math.floor(ms / 1000), m = Math.floor(s / 60), h = Math.floor(m / 60); return h > 0 ? `${h}:${String(m % 60).padStart(2, "0")}` : m > 0 ? `${m}:${String(s % 60).padStart(2, "0")}` : `${s}`; }
@@ -168,29 +168,44 @@ export default function App() {
 
       {/* === PANELS (these have text, map does NOT) === */}
       {panel === "shop" && <Panel title="🏪 Рынок" onClose={() => setPanel(null)}>
-        <div className="text-[11px] text-amber-300 mb-2">🪙 {g.coins.toFixed(2)}</div>
-        <div className="text-[10px] text-gray-400 mb-1 font-bold">Семена</div>
-        {crops.map(c => (<Row key={c.id} emoji={c.emoji} title={c.name} sub={`${fmt(c.growMs)} · ×${c.harvest} · 🪙${c.sellPrice}`}>
-          <Btn onClick={() => { G.buySeed(c.id, 1); G.selectTool(`${c.id}_seed`); }} disabled={g.coins < c.seedPrice}>🪙{c.seedPrice}</Btn>
-          <Btn onClick={() => { G.buySeed(c.id, 10); G.selectTool(`${c.id}_seed`); }} disabled={g.coins < c.seedPrice * 10}>×10</Btn>
-        </Row>))}
-        <div className="text-[10px] text-gray-400 mb-1 mt-3 font-bold">Инструменты</div>
-        {[{id:"axe",n:"Топор",p:0.05},{id:"stone_pickaxe",n:"Кам.кирка",p:0.20},{id:"iron_pickaxe",n:"Жел.кирка",p:1.00},{id:"gold_pickaxe",n:"Зол.кирка",p:5.00}].map(t=>(
-          <Row key={t.id} emoji={ie(t.id)} title={`${t.n} (×${g.inventory[t.id]||0})`}>
-            <Btn onClick={()=>G.buyTool(t.id,1)} disabled={g.coins<t.p}>🪙{t.p}</Btn>
-            <Btn onClick={()=>G.buyTool(t.id,5)} disabled={g.coins<t.p*5}>×5</Btn>
-          </Row>))}
+        <div className="text-[10px] text-amber-300 mb-1">🪙 {g.coins.toFixed(2)}</div>
+        <div className="text-[8px] text-gray-500 mb-1 uppercase tracking-wider">Семена</div>
+        {crops.map(c => { const sid = `${c.id}_seed`; const stock = getShopStock(sid, g.shopPurchases); return (
+          <div key={c.id} className="flex items-center gap-1.5 bg-[#5a3210]/30 rounded p-1 mb-0.5">
+            <span className="text-sm">{c.emoji}</span>
+            <div className="flex-1 min-w-0">
+              <div className="text-[9px] text-amber-100">{c.name} <span className="text-gray-500">🪙{c.seedPrice}</span></div>
+              <div className="text-[7px] text-gray-500">{fmt(c.growMs)}·×{c.harvest} | ост:{stock.available}</div>
+            </div>
+            <button onClick={() => { G.buySeed(c.id, 1); G.selectTool(sid); }} disabled={g.coins < c.seedPrice || stock.available < 1} className="text-[7px] bg-green-800 hover:bg-green-700 disabled:opacity-25 text-white px-1.5 py-0.5 rounded">×1</button>
+            <button onClick={() => { G.buySeed(c.id, 10); G.selectTool(sid); }} disabled={g.coins < c.seedPrice * 10 || stock.available < 10} className="text-[7px] bg-green-800 hover:bg-green-700 disabled:opacity-25 text-white px-1.5 py-0.5 rounded">×10</button>
+          </div>); })}
+        <div className="text-[8px] text-gray-500 mb-1 mt-2 uppercase tracking-wider">Инструменты</div>
+        {[{id:"axe",n:"Топор",e:"🪓",p:0.05},{id:"stone_pickaxe",n:"Кам.кирка",e:"⛏️",p:0.20},{id:"iron_pickaxe",n:"Жел.кирка",e:"⛏️",p:1.00},{id:"gold_pickaxe",n:"Зол.кирка",e:"⛏️",p:5.00}].map(t=>{ const stock = getShopStock(t.id, g.shopPurchases); return (
+          <div key={t.id} className="flex items-center gap-1.5 bg-[#5a3210]/30 rounded p-1 mb-0.5">
+            <span className="text-sm">{t.e}</span>
+            <div className="flex-1"><div className="text-[9px] text-amber-100">{t.n} <span className="text-gray-500">🪙{t.p} ×{g.inventory[t.id]||0}</span></div><div className="text-[7px] text-gray-500">ост:{stock.available}</div></div>
+            <button onClick={()=>G.buyTool(t.id,1)} disabled={g.coins<t.p||stock.available<1} className="text-[7px] bg-green-800 hover:bg-green-700 disabled:opacity-25 text-white px-1.5 py-0.5 rounded">×1</button>
+            <button onClick={()=>G.buyTool(t.id,5)} disabled={g.coins<t.p*5||stock.available<5} className="text-[7px] bg-green-800 hover:bg-green-700 disabled:opacity-25 text-white px-1.5 py-0.5 rounded">×5</button>
+          </div>); })}
       </Panel>}
 
       {panel === "inv" && <Panel title="📦 Инвентарь" onClose={() => setPanel(null)}>
         {Object.keys(g.inventory).length === 0 ? <p className="text-gray-400 text-sm text-center py-4">Пусто</p> :
-          <div className="grid grid-cols-4 gap-1.5">{Object.entries(g.inventory).map(([id, count]) => {
+          <div className="space-y-1">{Object.entries(g.inventory).map(([id, count]) => {
             const price = CROPS.find(c => c.id === id)?.sellPrice || ITEM_SELL[id] || 0;
-            return (<div key={id} onClick={() => G.selectTool(id)} className={`relative bg-[#5a3210]/50 rounded-lg p-2 flex flex-col items-center gap-0.5 cursor-pointer border-2 ${g.selectedTool === id ? "border-yellow-400" : "border-transparent hover:border-[#6b4226]"}`}>
-              <span className="text-xl">{ie(id)}</span>
-              <span className="text-[8px] text-amber-200 text-center leading-tight">{iName(id)}</span>
-              <span className="absolute top-0.5 right-0.5 bg-amber-700 text-white text-[8px] font-bold rounded-full min-w-[14px] h-3.5 flex items-center justify-center px-0.5">{count}</span>
-              {price > 0 && <button onClick={e => { e.stopPropagation(); G.sell(id, 1); }} className="text-[8px] bg-green-800 hover:bg-green-700 text-white px-1.5 py-0.5 rounded">🪙{price}</button>}
+            return (<div key={id} onClick={() => G.selectTool(id)} className={`flex items-center gap-2 bg-[#5a3210]/40 rounded-lg p-1.5 cursor-pointer border ${g.selectedTool === id ? "border-yellow-400" : "border-transparent hover:border-[#6b4226]"}`}>
+              <span className="text-lg">{ie(id)}</span>
+              <div className="flex-1 min-w-0">
+                <div className="text-[9px] text-amber-100">{iName(id)}</div>
+                <div className="text-[8px] text-gray-500">×{count}{price > 0 ? ` · 🪙${price}/шт` : ""}</div>
+              </div>
+              {price > 0 && <div className="flex gap-0.5 shrink-0">
+                <button onClick={e => { e.stopPropagation(); G.sell(id, 1); }} disabled={count < 1} className="text-[7px] bg-amber-800 hover:bg-amber-700 disabled:opacity-25 text-white px-1 py-0.5 rounded">×1</button>
+                <button onClick={e => { e.stopPropagation(); G.sell(id, Math.min(10, count)); }} disabled={count < 1} className="text-[7px] bg-amber-800 hover:bg-amber-700 disabled:opacity-25 text-white px-1 py-0.5 rounded">×10</button>
+                <button onClick={e => { e.stopPropagation(); G.sell(id, Math.min(100, count)); }} disabled={count < 1} className="text-[7px] bg-amber-800 hover:bg-amber-700 disabled:opacity-25 text-white px-1 py-0.5 rounded">×100</button>
+                <button onClick={e => { e.stopPropagation(); G.sellAll(id); }} disabled={count < 1} className="text-[7px] bg-red-800 hover:bg-red-700 disabled:opacity-25 text-white px-1 py-0.5 rounded">Всё</button>
+              </div>}
             </div>);
           })}</div>}
       </Panel>}

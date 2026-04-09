@@ -123,3 +123,54 @@ export function maxBeehiveSlots(level:number):number {
 export const ITEM_SELL: Record<string,number> = {
   wood:0.05, stone:0.10, iron:0.50, gold:2.00, egg:0.30, milk:0.80, honey:5.00, pollen:0.01,
 };
+
+// === SHOP LIMITS ===
+export interface ShopLimit {
+  id: string; // item id (seed or tool)
+  weeklyMax: number; // max per week
+  dailyRestock: number; // how many restock per day
+}
+
+export const SHOP_LIMITS: ShopLimit[] = [
+  // Seeds (weekly / daily restock)
+  { id: "sunflower_seed", weeklyMax: 800, dailyRestock: 50 },
+  { id: "potato_seed", weeklyMax: 400, dailyRestock: 25 },
+  { id: "pumpkin_seed", weeklyMax: 200, dailyRestock: 12 },
+  { id: "carrot_seed", weeklyMax: 100, dailyRestock: 6 },
+  { id: "cabbage_seed", weeklyMax: 60, dailyRestock: 4 },
+  { id: "beetroot_seed", weeklyMax: 40, dailyRestock: 3 },
+  { id: "cauliflower_seed", weeklyMax: 30, dailyRestock: 2 },
+  { id: "parsnip_seed", weeklyMax: 20, dailyRestock: 1 },
+  { id: "radish_seed", weeklyMax: 15, dailyRestock: 1 },
+  { id: "wheat_seed", weeklyMax: 50, dailyRestock: 3 },
+  { id: "kale_seed", weeklyMax: 10, dailyRestock: 0 }, // weekly only
+  // Tools
+  { id: "axe", weeklyMax: 50, dailyRestock: 5 },
+  { id: "stone_pickaxe", weeklyMax: 20, dailyRestock: 2 },
+  { id: "iron_pickaxe", weeklyMax: 10, dailyRestock: 0 }, // weekly only
+  { id: "gold_pickaxe", weeklyMax: 5, dailyRestock: 0 }, // weekly only
+];
+
+// Get current stock for an item
+export function getShopStock(itemId: string, purchased: Record<string, { weekly: number; daily: number; lastDay: string; lastWeek: string }>): { available: number; dailyLeft: number; weeklyLeft: number } {
+  const limit = SHOP_LIMITS.find(l => l.id === itemId);
+  if (!limit) return { available: 999, dailyLeft: 999, weeklyLeft: 999 };
+
+  const today = new Date().toISOString().slice(0, 10);
+  const weekStart = getWeekStart();
+  const rec = purchased[itemId] || { weekly: 0, daily: 0, lastDay: "", lastWeek: "" };
+
+  const weeklyUsed = rec.lastWeek === weekStart ? rec.weekly : 0;
+  const dailyUsed = rec.lastDay === today ? rec.daily : 0;
+
+  const weeklyLeft = limit.weeklyMax - weeklyUsed;
+  const dailyLeft = limit.dailyRestock > 0 ? limit.dailyRestock - dailyUsed : weeklyLeft;
+  const available = Math.min(weeklyLeft, dailyLeft);
+
+  return { available: Math.max(0, available), dailyLeft: Math.max(0, dailyLeft), weeklyLeft: Math.max(0, weeklyLeft) };
+}
+
+function getWeekStart(): string {
+  const d = new Date(); const day = d.getDay(); const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  return new Date(d.setDate(diff)).toISOString().slice(0, 10);
+}

@@ -1,19 +1,21 @@
 import { useState, useCallback, useEffect, useRef } from "react";
-import { CROPS, getLevel, RECIPES, RESOURCE_NODES, EXPANSIONS, TOOLS, BUILDINGS, CHICKEN_LEVELS, COW_LEVELS, BEEHIVE_DEMO_DAILY, BEEHIVE_DAILY_POLLEN, BEEHIVE_ACTION_INTERVAL, BEEHIVE_ACTIONS_TO_UPGRADE, maxBeehiveSlots, ITEM_SELL } from "../data/crops";
+import { CROPS, getLevel, RECIPES, RESOURCE_NODES, EXPANSIONS, TOOLS, BUILDINGS, CHICKEN_LEVELS, COW_LEVELS, BEEHIVE_DEMO_DAILY, BEEHIVE_DAILY_POLLEN, BEEHIVE_ACTION_INTERVAL, BEEHIVE_ACTIONS_TO_UPGRADE, maxBeehiveSlots, ITEM_SELL, getShopStock } from "../data/crops";
 
 export type CellType = "empty" | "plot" | "tree" | "rock" | "iron" | "gold" | "building" | "beehive";
 export interface Cell { type: CellType; cropId?: string | null; plantedAt?: number | null; lastHarvest?: number; hitsLeft?: number; buildingId?: string; beehiveIdx?: number; }
 export interface AnimalState { type: "chicken" | "cow"; xp: number; lastFed: number; lastCollect: number; }
 export interface BeehiveState { level: number; actions: number; lastAction: number; }
+export interface ShopRecord { weekly: number; daily: number; lastDay: string; lastWeek: string; }
 export interface GameState {
   coins: number; xp: number; pollen: number; inventory: Record<string, number>;
-  gridW: number; gridH: number; grid: (Cell | null)[][]; // null = outside territory
+  gridW: number; gridH: number; grid: (Cell | null)[][];
   buildings: string[]; animals: AnimalState[]; beehives: BeehiveState[]; expansion: number;
-  quickbar: string[]; // last 3 selected items
-  selectedTool: string | null; // currently active tool/seed
+  quickbar: string[]; selectedTool: string | null;
+  shopPurchases: Record<string, ShopRecord>;
 }
 
 const KEY = "nf_v7";
+function getWeekStartStr(): string { const d = new Date(); const day = d.getDay(); const diff = d.getDate() - day + (day === 0 ? -6 : 1); return new Date(d.setDate(diff)).toISOString().slice(0, 10); }
 const load = (): GameState | null => { try { return JSON.parse(localStorage.getItem(KEY)!); } catch { return null; } };
 const persist = (s: GameState) => { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch {} };
 
@@ -42,7 +44,7 @@ function newGame(): GameState {
     gridW: w, gridH: h, grid,
     buildings: ["workbench", "market"], animals: [],
     beehives: [{ level: 0, actions: 0, lastAction: 0 }],
-    expansion: 0, quickbar: [], selectedTool: null,
+    expansion: 0, quickbar: [], selectedTool: null, shopPurchases: {},
   };
 }
 
@@ -56,7 +58,6 @@ export function useGame() {
   const crops = CROPS.filter(c => c.level <= level);
   const availBuildings = BUILDINGS.filter(b => b.level <= level && !g.buildings.includes(b.id));
 
-  // Select tool/seed (adds to quickbar)
   const selectTool = useCallback((toolId: string) => {
     setG(p => {
       const qb = [toolId, ...p.quickbar.filter(t => t !== toolId)].slice(0, 3);
@@ -64,7 +65,22 @@ export function useGame() {
     });
   }, []);
 
-  const buySeed = useCallback((cropId: string, qty: number) => { const c = CROPS.find(x => x.id === cropId); if (!c) return; setG(p => { if (p.coins < c.seedPrice * qty) return p; const inv = { ...p.inventory }; inv[`${cropId}_seed`] = (inv[`${cropId}_seed`] || 0) + qty; return { ...p, coins: +(p.coins - c.seedPrice * qty).toFixed(4), inventory: inv }; }); }, []);
+  // Sell multiple or all
+  const sell = useCallback((itemId: string, qty: number) => { setG(p => { if ((p.inventory[itemId] || 0) < qty) return p; const price = CROPS.find(c => c.id === itemId)?.sellPrice || ITEM_SELL[itemId] || 0; if (!price) return p; const inv = { ...p.inventory }; inv[itemId] -= qty; if (inv[itemId] <= 0) delete inv[itemId]; return { ...p, coins: +(p.coins + price * qty).toFixed(4), inventory: inv }; }); }, []);
+  const sellAll = useCallback((itemId: string) => { const qty = g.inventory[itemId] || 0; if (qty > 0) sell(itemId, qty); }, [g.inventory, sell]);
+
+  const buySeed = useCallback((cropId: string, qty: number) => { const c = CROPS.find(x => x.id === cropId); if (!c) return; setG(p => {
+    if (p.coins < c.seedPrice * qty) return p;
+    const seedId = `${cropId}_seed`;
+    const stock = getShopStock(seedId, p.shopPurchases);
+    const actual = Math.min(qty, stock.available); if (actual <= 0) return p;
+    const inv = { ...p.inventory }; inv[seedId] = (inv[seedId] || 0) + actual;
+    const today = new Date().toISOString().slice(0, 10);
+    const ws = getWeekStartStr();
+    const rec = p.shopPurchases[seedId] || { weekly: 0, daily: 0, lastDay: "", lastWeek: "" };
+    const sp = { ...p.shopPurchases, [seedId]: { weekly: (rec.lastWeek === ws ? rec.weekly : 0) + actual, daily: (rec.lastDay === today ? rec.daily : 0) + actual, lastDay: today, lastWeek: ws } };
+    return { ...p, coins: +(p.coins - c.seedPrice * actual).toFixed(4), inventory: inv, shopPurchases: sp };
+  }); }, []);
 
   // Plant: uses selectedTool if it's a seed
   const plant = useCallback((x: number, y: number) => {
@@ -82,14 +98,25 @@ export function useGame() {
 
   const harvest = useCallback((x: number, y: number) => { setG(p => { const cell = p.grid[y]?.[x]; if (!cell || cell.type !== "plot" || !cell.cropId || !cell.plantedAt) return p; const c = CROPS.find(cr => cr.id === cell.cropId); if (!c || Date.now() - cell.plantedAt! < c.growMs) return p; const inv = { ...p.inventory }; inv[c.id] = (inv[c.id] || 0) + c.harvest; const grid = p.grid.map(r => r.map(c => c ? { ...c } : null)); grid[y][x] = { type: "plot", cropId: null, plantedAt: null }; return { ...p, inventory: inv, grid }; }); }, []);
 
-  const sell = useCallback((itemId: string, qty: number) => { setG(p => { if ((p.inventory[itemId] || 0) < qty) return p; const price = CROPS.find(c => c.id === itemId)?.sellPrice || ITEM_SELL[itemId] || 0; if (!price) return p; const inv = { ...p.inventory }; inv[itemId] -= qty; if (inv[itemId] <= 0) delete inv[itemId]; return { ...p, coins: +(p.coins + price * qty).toFixed(4), inventory: inv }; }); }, []);
-
   const cook = useCallback((recipeId: string) => { const r = RECIPES.find(x => x.id === recipeId); if (!r) return; setG(p => { if (!p.buildings.includes(r.building)) return p; const inv = { ...p.inventory }; for (const i of r.ingredients) if ((inv[i.id] || 0) < i.n) return p; for (const i of r.ingredients) { inv[i.id] -= i.n; if (inv[i.id] <= 0) delete inv[i.id]; } return { ...p, inventory: inv, xp: p.xp + r.xp }; }); }, []);
 
   const harvestNode = useCallback((x: number, y: number) => { setG(p => { const cell = p.grid[y]?.[x]; if (!cell || !["tree", "rock", "iron", "gold"].includes(cell.type)) return p; const def = RESOURCE_NODES[cell.type]; if (!def) return p; if (cell.lastHarvest && Date.now() - cell.lastHarvest < def.cooldownMs) return p; const tool = TOOLS.find(t => t.forResource === cell.type); if (tool && (p.inventory[tool.id] || 0) < 1) return p; const inv = { ...p.inventory }; inv[def.resource] = (inv[def.resource] || 0) + def.amount; if (tool) { inv[tool.id]--; if (inv[tool.id] <= 0) delete inv[tool.id]; } const grid = p.grid.map(r => r.map(c => c ? { ...c } : null)); grid[y][x] = { ...cell, lastHarvest: Date.now() }; return { ...p, inventory: inv, grid }; }); }, []);
 
   const craftTool = useCallback((toolId: string, qty: number) => { const tool = TOOLS.find(t => t.id === toolId); if (!tool) return; setG(p => { const inv = { ...p.inventory }; for (const [r, a] of Object.entries(tool.cost)) if ((inv[r] || 0) < a * qty) return p; for (const [r, a] of Object.entries(tool.cost)) { inv[r] -= a * qty; if (inv[r] <= 0) delete inv[r]; } inv[tool.id] = (inv[tool.id] || 0) + qty; return { ...p, inventory: inv }; }); }, []);
-  const buyTool = useCallback((toolId: string, qty: number) => { const prices: Record<string, number> = { axe: 0.05, stone_pickaxe: 0.20, iron_pickaxe: 1.00, gold_pickaxe: 5.00 }; const price = prices[toolId]; if (!price) return; setG(p => { if (p.coins < price * qty) return p; const inv = { ...p.inventory }; inv[toolId] = (inv[toolId] || 0) + qty; return { ...p, coins: +(p.coins - price * qty).toFixed(4), inventory: inv }; }); }, []);
+  const buyTool = useCallback((toolId: string, qty: number) => {
+    const prices: Record<string, number> = { axe: 0.05, stone_pickaxe: 0.20, iron_pickaxe: 1.00, gold_pickaxe: 5.00 };
+    const price = prices[toolId]; if (!price) return;
+    setG(p => {
+      if (p.coins < price * qty) return p;
+      const stock = getShopStock(toolId, p.shopPurchases);
+      const actual = Math.min(qty, stock.available); if (actual <= 0) return p;
+      const inv = { ...p.inventory }; inv[toolId] = (inv[toolId] || 0) + actual;
+      const today = new Date().toISOString().slice(0, 10); const ws = getWeekStartStr();
+      const rec = p.shopPurchases[toolId] || { weekly: 0, daily: 0, lastDay: "", lastWeek: "" };
+      const sp = { ...p.shopPurchases, [toolId]: { weekly: (rec.lastWeek === ws ? rec.weekly : 0) + actual, daily: (rec.lastDay === today ? rec.daily : 0) + actual, lastDay: today, lastWeek: ws } };
+      return { ...p, coins: +(p.coins - price * actual).toFixed(4), inventory: inv, shopPurchases: sp };
+    });
+  }, []);
 
   const build = useCallback((buildingId: string) => { const b = BUILDINGS.find(x => x.id === buildingId); if (!b) return; setG(p => { if (p.buildings.includes(buildingId)) return p; const inv = { ...p.inventory }; let coins = p.coins; for (const [r, a] of Object.entries(b.cost)) { if (r === "coins") { if (coins < a) return p; coins = +(coins - a).toFixed(4); } else { if ((inv[r] || 0) < a) return p; inv[r] -= a; if (inv[r] <= 0) delete inv[r]; } } const grid = p.grid.map(r => r.map(c => c ? { ...c } : null)); for (let y = 0; y < grid.length; y++) for (let x = 0; x < grid[0].length; x++) if (grid[y][x]?.type === "empty") { grid[y][x] = { type: "building", buildingId }; return { ...p, coins, inventory: inv, buildings: [...p.buildings, buildingId], grid }; } return { ...p, coins, inventory: inv, buildings: [...p.buildings, buildingId] }; }); }, []);
 
@@ -124,5 +151,5 @@ export function useGame() {
   const beehiveAction = useCallback((idx: number) => { setG(p => { const h = p.beehives[idx]; if (!h) return p; const now = Date.now(); if (h.lastAction && now - h.lastAction < BEEHIVE_ACTION_INTERVAL) return p; const beehives = [...p.beehives]; const na = h.actions + 1; let pollen = p.pollen + (h.level === 0 ? BEEHIVE_DEMO_DAILY / 3 : BEEHIVE_DAILY_POLLEN / 3); if (h.level === 0 && na >= BEEHIVE_ACTIONS_TO_UPGRADE) beehives[idx] = { level: 1, actions: 0, lastAction: now }; else beehives[idx] = { ...h, actions: na, lastAction: now }; return { ...p, beehives, pollen: +pollen.toFixed(4) }; }); }, []);
   const buyBeehive = useCallback(() => { setG(p => { if (p.beehives.length >= maxBeehiveSlots(getLevel(p.xp)) || p.pollen < 1000) return p; return { ...p, pollen: +(p.pollen - 1000).toFixed(4), beehives: [...p.beehives, { level: 1, actions: 0, lastAction: 0 }] }; }); }, []);
 
-  return { g, level, crops, availBuildings, selectTool, buySeed, plant, harvest, sell, cook, harvestNode, craftTool, buyTool, build, expand, buyChicken, buyCow, feedAnimal, collectAnimal, beehiveAction, buyBeehive };
+  return { g, level, crops, availBuildings, selectTool, buySeed, plant, harvest, sell, sellAll, cook, harvestNode, craftTool, buyTool, build, expand, buyChicken, buyCow, feedAnimal, collectAnimal, beehiveAction, buyBeehive };
 }
