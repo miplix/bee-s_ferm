@@ -16,7 +16,15 @@ export interface GameState {
 
 const KEY = "nf_v7";
 function getWeekStartStr(): string { const d = new Date(); const day = d.getDay(); const diff = d.getDate() - day + (day === 0 ? -6 : 1); return new Date(d.setDate(diff)).toISOString().slice(0, 10); }
-const load = (): GameState | null => { try { return JSON.parse(localStorage.getItem(KEY)!); } catch { return null; } };
+const load = (): GameState | null => {
+  try {
+    const raw = JSON.parse(localStorage.getItem(KEY)!);
+    if (!raw) return null;
+    // Migrate: ensure all fields exist
+    return { ...newGameDefaults(), ...raw, shopPurchases: raw.shopPurchases || {}, quickbar: raw.quickbar || [], selectedTool: raw.selectedTool || null };
+  } catch { return null; }
+};
+function newGameDefaults() { return { coins: 0, xp: 0, pollen: 0, inventory: {}, gridW: 6, gridH: 6, grid: [], buildings: [], animals: [], beehives: [], expansion: 0, quickbar: [], selectedTool: null, shopPurchases: {} }; }
 const persist = (s: GameState) => { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch {} };
 
 function newGame(): GameState {

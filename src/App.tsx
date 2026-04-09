@@ -170,7 +170,7 @@ export default function App() {
       {panel === "shop" && <Panel title="🏪 Рынок" onClose={() => setPanel(null)}>
         <div className="text-[10px] text-amber-300 mb-1">🪙 {g.coins.toFixed(2)}</div>
         <div className="text-[8px] text-gray-500 mb-1 uppercase tracking-wider">Семена</div>
-        {crops.map(c => { const sid = `${c.id}_seed`; const stock = getShopStock(sid, g.shopPurchases); return (
+        {crops.map(c => { const sid = `${c.id}_seed`; const stock = getShopStock(sid, g.shopPurchases || {}); return (
           <div key={c.id} className="flex items-center gap-1.5 bg-[#5a3210]/30 rounded p-1 mb-0.5">
             <span className="text-sm">{c.emoji}</span>
             <div className="flex-1 min-w-0">
@@ -181,7 +181,7 @@ export default function App() {
             <button onClick={() => { G.buySeed(c.id, 10); G.selectTool(sid); }} disabled={g.coins < c.seedPrice * 10 || stock.available < 10} className="text-[7px] bg-green-800 hover:bg-green-700 disabled:opacity-25 text-white px-1.5 py-0.5 rounded">×10</button>
           </div>); })}
         <div className="text-[8px] text-gray-500 mb-1 mt-2 uppercase tracking-wider">Инструменты</div>
-        {[{id:"axe",n:"Топор",e:"🪓",p:0.05},{id:"stone_pickaxe",n:"Кам.кирка",e:"⛏️",p:0.20},{id:"iron_pickaxe",n:"Жел.кирка",e:"⛏️",p:1.00},{id:"gold_pickaxe",n:"Зол.кирка",e:"⛏️",p:5.00}].map(t=>{ const stock = getShopStock(t.id, g.shopPurchases); return (
+        {[{id:"axe",n:"Топор",e:"🪓",p:0.05},{id:"stone_pickaxe",n:"Кам.кирка",e:"⛏️",p:0.20},{id:"iron_pickaxe",n:"Жел.кирка",e:"⛏️",p:1.00},{id:"gold_pickaxe",n:"Зол.кирка",e:"⛏️",p:5.00}].map(t=>{ const stock = getShopStock(t.id, g.shopPurchases || {}); return (
           <div key={t.id} className="flex items-center gap-1.5 bg-[#5a3210]/30 rounded p-1 mb-0.5">
             <span className="text-sm">{t.e}</span>
             <div className="flex-1"><div className="text-[9px] text-amber-100">{t.n} <span className="text-gray-500">🪙{t.p} ×{g.inventory[t.id]||0}</span></div><div className="text-[7px] text-gray-500">ост:{stock.available}</div></div>
