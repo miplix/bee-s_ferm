@@ -1,0 +1,110 @@
+import type { GameState } from "../../domain/types/game";
+import { cellKey } from "../../domain/types/game";
+import type { FruitId } from "../../domain/types/ids";
+import { getFruitDef } from "../../data/fruits.data";
+import { getLevel } from "../../domain/level/level";
+import { elapsed } from "../../domain/time/time";
+import { mulberry32, randInt } from "../../domain/rng/prng";
+
+/**
+ * Derive a numeric seed from the game seed + cell coordinates.
+ * Used to deterministically compute harvestsLeft at plant time.
+ */
+function cellSeed(gameSeed: string, cx: number, cy: number, now: number): number {
+  let h = 0;
+  const s = `${gameSeed}:${cx}:${cy}:${now}`;
+  for (let i = 0; i < s.length; i++) {
+    h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+  }
+  return h >>> 0;
+}
+
+/** Plant a fruit bush on a fruit_patch cell. Consumes 1 fruit seed. */
+export function plantFruit(
+  state: GameState,
+  cx: number,
+  cy: number,
+  fruitId: FruitId,
+  now: number,
+): GameState {
+  const key = cellKey(cx, cy);
+  const cell = state.cells[key];
+  if (!cell || cell.type !== "fruit_patch") return state;
+  if (cell.fruitId) return state;
+
+  const seedId = `${fruitId}_seed`;
+  const seedCount = state.inventory[seedId] ?? 0;
+  if (seedCount < 1) return state;
+
+  const fruit = getFruitDef(fruitId);
+  if (getLevel(state.xp) < fruit.level) return state;
+
+  // Seeded PRNG determines harvest count
+  const rng = mulberry32(cellSeed(state.seed, cx, cy, now));
+  const harvestsLeft = randInt(rng, fruit.minHarvests, fruit.maxHarvests);
+
+  const cells = { ...state.cells };
+  cells[key] = {
+    ...cell,
+    fruitId,
+    fruitPlantedAt: now,
+    fruitHarvestsLeft: harvestsLeft,
+    lastFruitHarvest: null,
+  };
+
+  return {
+    ...state,
+    cells,
+    inventory: { ...state.inventory, [seedId]: seedCount - 1 },
+    lastMeaningfulActivity: now,
+  };
+}
+
+/** Harvest one fruit from a fruit bush. Decrements harvestsLeft; removes bush when 0. */
+export function harvestFruit(
+  state: GameState,
+  cx: number,
+  cy: number,
+  now: number,
+): GameState {
+  const key = cellKey(cx, cy);
+  const cell = state.cells[key];
+  if (!cell || cell.type !== "fruit_patch" || !cell.fruitId || !cell.fruitPlantedAt) return state;
+
+  const fruit = getFruitDef(cell.fruitId);
+
+  // Check grow time: first harvest uses fruitPlantedAt, subsequent uses lastFruitHarvest
+  const refTime = cell.lastFruitHarvest ?? cell.fruitPlantedAt;
+  if (elapsed(refTime, now) < fruit.growMs) return state;
+
+  const harvestsLeft = (cell.fruitHarvestsLeft ?? 1) - 1;
+
+  const cells = { ...state.cells };
+  const inv = { ...state.inventory };
+  inv[cell.fruitId] = (inv[cell.fruitId] ?? 0) + 1;
+
+  if (harvestsLeft <= 0) {
+    // Bush depleted — reset to empty fruit patch
+    cells[key] = {
+      ...cell,
+      fruitId: null,
+      fruitPlantedAt: null,
+      fruitHarvestsLeft: null,
+      lastFruitHarvest: null,
+    };
+  } else {
+    // Bush still has harvests remaining
+    cells[key] = {
+      ...cell,
+      fruitHarvestsLeft: harvestsLeft,
+      lastFruitHarvest: now,
+    };
+  }
+
+  return {
+    ...state,
+    cells,
+    inventory: inv,
+    lastMeaningfulActivity: now,
+  };
+}
