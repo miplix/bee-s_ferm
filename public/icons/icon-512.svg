@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="80" fill="#4a3a20"/>
+  <rect width="512" height="512" rx="80" fill="url(#bg)"/>
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#7a6030"/>
+      <stop offset="100%" stop-color="#2a1a08"/>
+    </radialGradient>
+  </defs>
+  <polygon points="256,70 336,116 336,208 256,254 176,208 176,116" fill="#f5c518" opacity="0.9"/>
+  <polygon points="256,96 316,130 316,198 256,232 196,198 196,130" fill="#e8a800"/>
+  <ellipse cx="256" cy="320" rx="58" ry="42" fill="#f5c518"/>
+  <rect x="198" y="302" width="32" height="13" rx="5" fill="#1a1a1a"/>
+  <rect x="198" y="320" width="32" height="13" rx="5" fill="#1a1a1a"/>
+  <rect x="198" y="338" width="32" height="13" rx="5" fill="#1a1a1a"/>
+  <ellipse cx="214" cy="284" rx="38" ry="20" fill="white" opacity="0.7" transform="rotate(-20 214 284)"/>
+  <ellipse cx="298" cy="284" rx="38" ry="20" fill="white" opacity="0.7" transform="rotate(20 298 284)"/>
+  <circle cx="295" cy="314" r="8" fill="#1a1a1a"/>
+  <polygon points="314,328 332,316 314,346" fill="#c8a000"/>
+  <text x="256" y="430" text-anchor="middle" font-family="serif" font-size="48" font-weight="bold" fill="#f5c518">ПЧЕЛО</text>
+  <text x="256" y="478" text-anchor="middle" font-family="serif" font-size="38" fill="#c8a000">ФЕРМА</text>
+</svg>
