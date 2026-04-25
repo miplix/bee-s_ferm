@@ -138,6 +138,10 @@ export function FarmView() {
         style={{
           gridTemplateColumns: `repeat(${bounds.gridW}, ${CELL_SIZE}px)`,
           gridTemplateRows: `repeat(${bounds.gridH}, ${CELL_SIZE}px)`,
+          backgroundImage: `url(/tiles/grass_basic.png)`,
+          backgroundSize: `${CELL_SIZE}px ${CELL_SIZE}px`,
+          backgroundRepeat: "repeat",
+          imageRendering: "pixelated",
         }}
       >
         {Array.from({ length: bounds.gridH }, (_, gy) =>
@@ -324,33 +328,24 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
 
   const hoverHighlight = isHovered ? "brightness-125" : "";
 
-  // Child cell (part of a 2x2 object) — same bg as parent type, click delegates to parent
+  // Child cell (part of a 2x2 object) — transparent, click delegates to parent
   if (cell?.parentKey) {
-    const parentCell = null; // we don't have access to parent state here, use type
-    const childBg = cell.type === "tree"
-      ? "bg-[#2d5a1e]"
-      : cell.type === "building"
-        ? "bg-brown-600"
-        : cell.type === "beehive"
-          ? "bg-yellow-700"
-          : "bg-[#3a7a28]";
     return (
       <div
         onClick={onClick}
         {...hoverHandlers}
-        className={`${childBg} cursor-pointer border border-black/5 ${moveOverlay} ${hoverHighlight}`}
+        className={`cursor-pointer ${moveOverlay} ${hoverHighlight}`}
         style={{ width: CELL_SIZE, height: CELL_SIZE, filter: isHovered ? "brightness(1.25)" : undefined }}
       />
     );
   }
 
-  // Empty cell — in move mode it's a valid target
+  // Empty cell — transparent over grass; only highlights in move mode
   if (!cell) {
     return (
       <div
         onClick={onClick}
-        className={`border border-[#2d6a1e]/30
-          ${moveMode && moveSource ? "bg-[#4a9a38] cursor-pointer border-dashed border-green-400/50" : "bg-[#3a7a28]"}`}
+        className={moveMode && moveSource ? "cursor-pointer border border-dashed border-green-400/50 bg-green-400/15" : ""}
         style={{ width: CELL_SIZE, height: CELL_SIZE }}
       />
     );
@@ -377,18 +372,25 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
     return (
       <div onClick={onClick}
         className={`relative flex flex-col items-center justify-center cursor-pointer
-          border border-black/10 ${ready ? "bg-[#6b4226] animate-pulse" : "bg-[#5a3210] hover:bg-[#6b4226]"} ${moveOverlay}`}
+          ${ready ? "animate-pulse" : ""} ${moveOverlay}`}
         style={{ width: CELL_SIZE, height: CELL_SIZE }}>
+        {/* Plot dirt patch background */}
+        <img
+          src="/plot/plot_empty.png"
+          alt=""
+          className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+        />
         {cropImg && growing ? (
           <img
             src={cropImg}
             alt=""
-            className="w-11 h-11 object-contain pointer-events-none"
+            className="relative w-11 h-11 object-contain pointer-events-none"
             style={{ imageRendering: "auto" }}
             onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
           />
         ) : (
-          <span className="text-lg">{icon}</span>
+          selectedTool?.endsWith("_seed") && <span className="relative text-lg">➕</span>
         )}
         {growing && !ready && (
           <>
@@ -487,8 +489,7 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
     return (
       <div onClick={onClick}
         {...hoverHandlers}
-        className={`relative flex flex-col items-center justify-center cursor-pointer
-          border border-black/5 ${exhausted ? "bg-[#444] opacity-50" : onCooldown ? "bg-[#3a5a2e]" : "bg-[#2d5a1e]"} ${moveOverlay}`}
+        className={`relative flex flex-col items-center justify-center cursor-pointer ${exhausted ? "opacity-50" : ""} ${moveOverlay}`}
         style={{
           width: CELL_SIZE, height: CELL_SIZE,
           overflow: is2x2Node ? "visible" : "hidden",
@@ -550,7 +551,7 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
     return (
       <div onClick={onClick}
         {...hoverHandlers}
-        className={`relative flex items-center justify-center bg-brown-600 border border-black/5 cursor-pointer ${moveOverlay}`}
+        className={`relative flex items-center justify-center cursor-pointer ${moveOverlay}`}
         style={{
           width: CELL_SIZE, height: CELL_SIZE,
           overflow: is2x2 ? "visible" : "hidden",
@@ -583,12 +584,12 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
     const hiveImg = beehiveSrc(lvl);
     return (
       <div onClick={onClick}
-        className={`flex items-center justify-center bg-yellow-700 border border-black/20 cursor-pointer hover:bg-yellow-600 ${moveOverlay}`}
+        className={`flex items-center justify-center cursor-pointer ${moveOverlay}`}
         style={{ width: CELL_SIZE, height: CELL_SIZE }}>
         <img
           src={hiveImg}
           alt=""
-          className="w-11 h-11 object-contain pointer-events-none"
+          className="w-full h-full object-contain pointer-events-none"
           onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
         />
       </div>
