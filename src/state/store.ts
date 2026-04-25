@@ -31,6 +31,9 @@ import * as tradingAct from "./actions/tradingActions";
 import * as factionAct from "./actions/factionActions";
 import * as petAct from "./actions/petActions";
 import { toast } from "./toastStore";
+import { getCropDef, ISLAND_ORDER } from "../data/crops.data";
+import { getLevel } from "../domain/level/level";
+import { getCurrentSeason, isCropInSeason, SEASON_INFO } from "../domain/seasons/seasons";
 
 export interface StoreActions {
   // UI
@@ -187,7 +190,29 @@ export const useStore = create<Store>()(
       plant: (x, y, cropId) =>
         set((s) => {
           const next = cropAct.plant(s, x, y, cropId, Date.now());
-          if (next === s) { toast("Нельзя посадить: нет семян или требования не выполнены", "error"); return s; }
+          if (next === s) {
+            // Diagnose why plant failed — give specific feedback
+            const cell = s.cells[`${x},${y}`];
+            if (!cell || cell.type !== "plot") { toast("Это не грядка", "error"); return s; }
+            if (cell.cropId) { toast("Грядка уже занята", "error"); return s; }
+            const seedId = `${cropId}_seed`;
+            if ((s.inventory[seedId] ?? 0) < 1) { toast("Нет семян", "error"); return s; }
+            const def = getCropDef(cropId);
+            const lvl = getLevel(s.xp);
+            if (lvl < def.level) { toast(`Нужен уровень ${def.level} (у тебя ${lvl})`, "error"); return s; }
+            if (def.minIsland && ISLAND_ORDER[s.island] < ISLAND_ORDER[def.minIsland]) {
+              toast(`Доступно только на острове ${def.minIsland}`, "error"); return s;
+            }
+            if (s.island !== "basic" && def.seasons !== "all") {
+              const season = getCurrentSeason(Date.now(), s.seasonAnchor);
+              if (!isCropInSeason(def.seasons, season)) {
+                const names = (def.seasons as string[]).map((x) => SEASON_INFO[x as keyof typeof SEASON_INFO].name).join("/");
+                toast(`Не сезон: нужен ${names}`, "error"); return s;
+              }
+            }
+            toast("Нельзя посадить", "error");
+            return s;
+          }
           return { ...next, quickbar: pushToQuickbar(next.quickbar, `${cropId}_seed`) };
         }),
       harvest: (x, y) =>
@@ -465,7 +490,7 @@ export const useStore = create<Store>()(
           if (!cell.cropId && s.selectedTool) {
             const seedMatch = s.selectedTool.match(/^(.+)_seed$/);
             if (seedMatch) {
-              set((prev) => cropAct.plant(prev, cx, cy, seedMatch[1] as CropId, now));
+              get().plant(cx, cy, seedMatch[1] as CropId);
               return;
             }
           }

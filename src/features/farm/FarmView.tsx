@@ -502,15 +502,30 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
           zIndex: is2x2Node ? 10 : 1,
           filter: isHovered ? "brightness(1.25)" : undefined,
         }}>
-        {/* Icon spanning 2x2 (autocropped sources fill their own bbox) */}
+        {/* Icon spanning 2x2. Stump (chopped tree) is smaller and shifted down. */}
         {imgSrc ? (
-          <img
-            src={imgSrc}
-            alt=""
-            className={`absolute object-contain pointer-events-none max-w-none ${exhausted ? "grayscale" : ""}`}
-            style={{ top: 0, left: 0, width: CELL_SIZE * sz, height: CELL_SIZE * sz }}
-            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-          />
+          isTree && onCooldown ? (
+            <img
+              src={imgSrc}
+              alt=""
+              className="absolute object-contain pointer-events-none max-w-none"
+              style={{
+                top: CELL_SIZE * sz * 0.45,
+                left: CELL_SIZE * sz * 0.25,
+                width: CELL_SIZE * sz * 0.5,
+                height: CELL_SIZE * sz * 0.5,
+              }}
+              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+            />
+          ) : (
+            <img
+              src={imgSrc}
+              alt=""
+              className={`absolute object-contain pointer-events-none max-w-none ${exhausted ? "grayscale" : ""}`}
+              style={{ top: 0, left: 0, width: CELL_SIZE * sz, height: CELL_SIZE * sz }}
+              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+            />
+          )
         ) : (
           <span
             className={`absolute flex items-center justify-center pointer-events-none ${exhausted ? "grayscale" : ""}`}
