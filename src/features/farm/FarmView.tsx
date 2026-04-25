@@ -500,16 +500,13 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
           zIndex: is2x2Node ? 10 : 1,
           filter: isHovered ? "brightness(1.25)" : undefined,
         }}>
-        {/* Icon spanning 2x2, scaled 1.4x to compensate for AI image margins */}
+        {/* Icon spanning 2x2 (autocropped sources fill their own bbox) */}
         {imgSrc ? (
           <img
             src={imgSrc}
             alt=""
             className={`absolute object-contain pointer-events-none ${exhausted ? "grayscale" : ""}`}
-            style={{
-              top: -CELL_SIZE * sz * 0.2, left: -CELL_SIZE * sz * 0.2,
-              width: CELL_SIZE * sz * 1.4, height: CELL_SIZE * sz * 1.4,
-            }}
+            style={{ top: 0, left: 0, width: CELL_SIZE * sz, height: CELL_SIZE * sz }}
             onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
           />
         ) : (
@@ -570,10 +567,7 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
             src={buildingImg}
             alt=""
             className="absolute object-contain pointer-events-none"
-            style={{
-              top: -wPx * 0.2, left: -wPx * 0.2,
-              width: wPx * 1.4, height: wPx * 1.4,
-            }}
+            style={{ top: 0, left: 0, width: wPx, height: wPx }}
             onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
           />
         ) : (
