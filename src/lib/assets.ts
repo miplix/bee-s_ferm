@@ -27,18 +27,18 @@ export function buildingSrc(buildingId: string, level = 1): string {
   if (buildingId === "campfire") return "/buildings/ai_v3/campfire.png";
   if (buildingId === "feeder") return "/buildings/ai_v3/feeder.png";
   if (buildingId === "town_hall") return "/buildings/ai_v3/town_hall.png";
-  if (buildingId === "fishing_dock") return "/buildings/ai/fishing_dock.png";
-  if (buildingId === "toolshed") return "/buildings/ai/toolshed.png";
-  if (buildingId === "bulletin_board") return "/buildings/ai/bulletin_board.png";
+  if (buildingId === "fishing_dock") return "/buildings/ai_v3/fishing_dock.png";
+  if (buildingId === "toolshed") return "/buildings/ai_v3/toolshed.png";
+  if (buildingId === "bulletin_board") return "/buildings/ai_v3/bulletin_board.png";
 
   if (buildingId === "henhouse") {
-    if (level >= 3) return "/buildings/ai/henhouse_lv3.png";
-    if (level >= 2) return "/buildings/ai/henhouse_lv2.png";
+    if (level >= 3) return "/buildings/ai_v3/henhouse_lv3.png";
+    if (level >= 2) return "/buildings/ai_v3/henhouse_lv2.png";
     return "/buildings/ai_v3/henhouse_lv1.png";
   }
   if (buildingId === "barn") {
-    if (level >= 3) return "/buildings/ai/barn_lv3.png";
-    if (level >= 2) return "/buildings/ai/barn_lv2.png";
+    if (level >= 3) return "/buildings/ai_v3/barn_lv3.png";
+    if (level >= 2) return "/buildings/ai_v3/barn_lv2.png";
     return "/buildings/ai_v3/barn_lv1.png";
   }
 
