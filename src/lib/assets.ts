@@ -44,7 +44,7 @@ export function buildingSrc(buildingId: string, level = 1): string {
 
   const map: Record<string, string> = {
     workbench: "/buildings/ai_v3/workbench.png",
-    market: "/buildings/ai_v3/market.png",
+    market: "/buildings/ai_v2/market.png",
     well: "/buildings/ai_v3/water_well.png",
     kitchen: "/buildings/ai_v3/kitchen.png",
     bakery: "/buildings/ai_v3/bakery.png",

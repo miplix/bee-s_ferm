@@ -132,16 +132,18 @@ export function FarmView() {
           justifyContent: "center",
         }}
       >
-      {/* Island grid */}
+      {/* Island grid — base soil + softened grass */}
       <div
         className="grid gap-0 relative"
         style={{
           gridTemplateColumns: `repeat(${bounds.gridW}, ${CELL_SIZE}px)`,
           gridTemplateRows: `repeat(${bounds.gridH}, ${CELL_SIZE}px)`,
-          backgroundImage: `url(/tiles/grass_basic.png)`,
-          backgroundSize: `${CELL_SIZE}px ${CELL_SIZE}px`,
+          backgroundColor: "#5a7a3e",
+          backgroundImage: `linear-gradient(rgba(0,0,0,0.10), rgba(0,0,0,0.10)), url(/tiles/grass_basic.png)`,
+          backgroundSize: `auto, ${CELL_SIZE}px ${CELL_SIZE}px`,
           backgroundRepeat: "repeat",
-          imageRendering: "pixelated",
+          imageRendering: "auto",
+          filter: "saturate(0.65) brightness(0.95)",
         }}
       >
         {Array.from({ length: bounds.gridH }, (_, gy) =>
@@ -374,18 +376,20 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
         className={`relative flex flex-col items-center justify-center cursor-pointer
           ${ready ? "animate-pulse" : ""} ${moveOverlay}`}
         style={{ width: CELL_SIZE, height: CELL_SIZE }}>
-        {/* Plot dirt patch background */}
-        <img
-          src="/plot/plot_empty.png"
-          alt=""
-          className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-        />
+        {/* Empty plot dirt patch — only when nothing growing */}
+        {!growing && (
+          <img
+            src="/plot/plot_empty.png"
+            alt=""
+            className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+          />
+        )}
         {cropImg && growing ? (
           <img
             src={cropImg}
             alt=""
-            className="relative w-11 h-11 object-contain pointer-events-none"
+            className="relative w-full h-full object-contain pointer-events-none"
             style={{ imageRendering: "auto" }}
             onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
           />
@@ -496,13 +500,16 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
           zIndex: is2x2Node ? 10 : 1,
           filter: isHovered ? "brightness(1.25)" : undefined,
         }}>
-        {/* Icon spanning 2x2 */}
+        {/* Icon spanning 2x2, scaled 1.4x to compensate for AI image margins */}
         {imgSrc ? (
           <img
             src={imgSrc}
             alt=""
             className={`absolute object-contain pointer-events-none ${exhausted ? "grayscale" : ""}`}
-            style={{ top: 0, left: 0, width: CELL_SIZE * sz, height: CELL_SIZE * sz }}
+            style={{
+              top: -CELL_SIZE * sz * 0.2, left: -CELL_SIZE * sz * 0.2,
+              width: CELL_SIZE * sz * 1.4, height: CELL_SIZE * sz * 1.4,
+            }}
             onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
           />
         ) : (
@@ -563,7 +570,10 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
             src={buildingImg}
             alt=""
             className="absolute object-contain pointer-events-none"
-            style={{ top: 0, left: 0, width: wPx, height: wPx }}
+            style={{
+              top: -wPx * 0.2, left: -wPx * 0.2,
+              width: wPx * 1.4, height: wPx * 1.4,
+            }}
             onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
           />
         ) : (
