@@ -120,6 +120,7 @@ export function completeExpansion(state: GameState, now: number): GameState {
   for (let i = 0; i < (exp.adds.gold ?? 0); i++) place1x1({ type: "gold", hitsLeft: RESOURCE_NODES.gold.maxNodes, lastHarvest: 0 });
   for (let i = 0; i < (exp.adds.crimstone ?? 0); i++) place1x1({ type: "crimstone", hitsLeft: RESOURCE_NODES.crimstone.maxNodes, lastHarvest: 0 });
   for (let i = 0; i < (exp.adds.flower_beds ?? 0); i++) place1x1({ type: "flower_bed" });
+  for (let i = 0; i < (exp.adds.fruit_patches ?? 0); i++) place1x1({ type: "fruit_patch" });
   for (let i = 0; i < (exp.adds.oil_reserve ?? 0); i++) place1x1({ type: "oil_reserve", hitsLeft: RESOURCE_NODES.oil_reserve.maxNodes, lastHarvest: 0 });
   for (let i = 0; i < (exp.adds.greenhouse ?? 0); i++) place2x2({ type: "greenhouse" });
   for (let i = 0; i < (exp.adds.obsidian_rock ?? 0); i++) place1x1({ type: "obsidian_rock", hitsLeft: RESOURCE_NODES.obsidian_rock.maxNodes, lastHarvest: 0 });

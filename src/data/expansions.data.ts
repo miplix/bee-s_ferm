@@ -8,6 +8,7 @@ export interface ExpansionAdds {
   gold?: number;
   crimstone?: number;
   flower_beds?: number;
+  fruit_patches?: number;
   oil_reserve?: number;
   greenhouse?: number;
   obsidian_rock?: number;
@@ -39,9 +40,9 @@ export const EXPANSIONS: readonly ExpansionDef[] = [
 // --- Spring Island (20 expansions) ---
 
 export const SPRING_EXPANSIONS: readonly ExpansionDef[] = [
-  { id:  1, minLevel: 11, cost: { wood: 30,  stone: 15 },                                       adds: { plots: 3, trees: 1, crimstone: 1, flower_beds: 1 } },
-  { id:  2, minLevel: 12, cost: { wood: 40,  stone: 20 },                                       adds: { plots: 3, trees: 1, crimstone: 1, flower_beds: 2 } },
-  { id:  3, minLevel: 13, cost: { wood: 50,  stone: 25 },                                       adds: { plots: 4, trees: 1, crimstone: 1, flower_beds: 2 } },
+  { id:  1, minLevel: 11, cost: { wood: 30,  stone: 15 },                                       adds: { plots: 2, trees: 1, crimstone: 1, flower_beds: 1, fruit_patches: 1 } },
+  { id:  2, minLevel: 12, cost: { wood: 40,  stone: 20 },                                       adds: { plots: 2, trees: 1, crimstone: 1, flower_beds: 2, fruit_patches: 1 } },
+  { id:  3, minLevel: 13, cost: { wood: 50,  stone: 25 },                                       adds: { plots: 3, trees: 1, crimstone: 1, flower_beds: 2, fruit_patches: 1 } },
   { id:  4, minLevel: 14, cost: { wood: 55,  stone: 30,  crimstone: 1 },                        adds: { plots: 4, trees: 2, crimstone: 2, flower_beds: 2 } },
   { id:  5, minLevel: 14, cost: { wood: 60,  stone: 35,  crimstone: 2 },                        adds: { plots: 4, trees: 2, crimstone: 2, flower_beds: 2 } },
   { id:  6, minLevel: 15, cost: { wood: 70,  stone: 40,  iron: 5,  crimstone: 3 },              adds: { plots: 5, trees: 2, crimstone: 2, flower_beds: 3 } },
