@@ -21,6 +21,13 @@ import { cropStageSrc, nodeSrc, buildingSrc, beehiveSrc } from "../../lib/assets
 
 const CELL_SIZE = 52;
 
+const GRASS_STYLE: React.CSSProperties = {
+  backgroundImage: `linear-gradient(rgba(0,0,0,0.10), rgba(0,0,0,0.10)), url(/tiles/grass_basic.png)`,
+  backgroundSize: `auto, ${CELL_SIZE}px ${CELL_SIZE}px`,
+  backgroundRepeat: "repeat",
+  filter: "saturate(0.65) brightness(0.95)",
+};
+
 export function FarmView() {
   useTick(1000);
   const blocks = useStore((s) => s.blocks);
@@ -132,18 +139,12 @@ export function FarmView() {
           justifyContent: "center",
         }}
       >
-      {/* Island grid — base soil + softened grass */}
+      {/* Island grid — grass goes on each in-block cell, not the whole container */}
       <div
         className="grid gap-0 relative"
         style={{
           gridTemplateColumns: `repeat(${bounds.gridW}, ${CELL_SIZE}px)`,
           gridTemplateRows: `repeat(${bounds.gridH}, ${CELL_SIZE}px)`,
-          backgroundColor: "#5a7a3e",
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.10), rgba(0,0,0,0.10)), url(/tiles/grass_basic.png)`,
-          backgroundSize: `auto, ${CELL_SIZE}px ${CELL_SIZE}px`,
-          backgroundRepeat: "repeat",
-          imageRendering: "auto",
-          filter: "saturate(0.65) brightness(0.95)",
         }}
       >
         {Array.from({ length: bounds.gridH }, (_, gy) =>
@@ -210,13 +211,15 @@ export function FarmView() {
               );
             }
 
-            // Normal cell
+            // Normal cell — wrap in grass background (only inside expanded blocks)
             return (
-              <CellView key={`${gx}-${gy}`} cell={cell} cx={cx} cy={cy}
-                onClick={() => clickCell(cx, cy)} selectedTool={selectedTool}
-                moveMode={moveMode} moveSource={moveSource}
-                hoveredParent={hoveredParent} setHoveredParent={setHoveredParent}
-                buildingLevels={buildingLevels} beehives={beehives} />
+              <div key={`${gx}-${gy}`} style={GRASS_STYLE}>
+                <CellView cell={cell} cx={cx} cy={cy}
+                  onClick={() => clickCell(cx, cy)} selectedTool={selectedTool}
+                  moveMode={moveMode} moveSource={moveSource}
+                  hoveredParent={hoveredParent} setHoveredParent={setHoveredParent}
+                  buildingLevels={buildingLevels} beehives={beehives} />
+              </div>
             );
           }),
         )}
