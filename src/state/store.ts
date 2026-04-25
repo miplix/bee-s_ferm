@@ -30,6 +30,7 @@ import * as cropMachineAct from "./actions/cropMachineActions";
 import * as tradingAct from "./actions/tradingActions";
 import * as factionAct from "./actions/factionActions";
 import * as petAct from "./actions/petActions";
+import * as compostAct from "./actions/compostActions";
 import { toast } from "./toastStore";
 import { getCropDef, ISLAND_ORDER } from "../data/crops.data";
 import { getLevel } from "../domain/level/level";
@@ -155,6 +156,11 @@ export interface StoreActions {
   napPet(petId: string): void;
   feedPet(petId: string): void;
 
+  // Composting
+  startCompost(composterId: string): void;
+  collectCompost(slotIndex: number): void;
+  applyFertilizer(x: number, y: number, fertilizerId: string): void;
+
   // Move
   toggleMoveMode(): void;
   cancelMove(): void;
@@ -275,9 +281,21 @@ export const useStore = create<Store>()(
 
       // --- Buildings ---
       build: (buildingId) =>
-        set((s) => buildAct.build(s, buildingId as any, Date.now())),
+        set((s) => {
+          const next = buildAct.build(s, buildingId as any, Date.now());
+          if (next === s) {
+            if (s.buildings.includes(buildingId as any)) toast("Уже построено (один экземпляр)", "error");
+            else toast("Не хватает места, ресурсов или уровня", "error");
+            return s;
+          }
+          return next;
+        }),
       upgradeBuilding: (buildingId) =>
-        set((s) => buildAct.upgradeBuilding(s, buildingId as any, Date.now())),
+        set((s) => {
+          const next = buildAct.upgradeBuilding(s, buildingId as any, Date.now());
+          if (next === s) { toast("Не хватает ресурсов для апгрейда или максимум", "error"); return s; }
+          return next;
+        }),
 
       // --- Animals ---
       buyAnimal: (kind) =>
@@ -431,6 +449,26 @@ export const useStore = create<Store>()(
         set((s) => factionAct.joinFaction(s, factionId)),
 
       // --- Pets ---
+      // --- Composting ---
+      startCompost: (composterId) =>
+        set((s) => {
+          const next = compostAct.startCompost(s, composterId, Date.now());
+          if (next === s) { toast("Не хватает ингредиентов или уровня для компостера", "error"); return s; }
+          return next;
+        }),
+      collectCompost: (slotIndex) =>
+        set((s) => {
+          const next = compostAct.collectCompost(s, slotIndex, Date.now());
+          if (next === s) { toast("Компост ещё не готов", "error"); return s; }
+          return next;
+        }),
+      applyFertilizer: (x, y, fertilizerId) =>
+        set((s) => {
+          const next = compostAct.applyFertilizer(s, x, y, fertilizerId, Date.now());
+          if (next === s) { toast("Нельзя применить удобрение", "error"); return s; }
+          return next;
+        }),
+
       adoptPet: (petId) =>
         set((s) => petAct.adoptPet(s, petId, Date.now())),
       napPet: (petId) =>

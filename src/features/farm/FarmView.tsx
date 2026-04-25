@@ -129,18 +129,32 @@ export function FarmView() {
       })
     : false;
 
-  // Surrounding background by island (water+clouds for basic, sand for desert, lava for volcano)
-  const islandBg: Record<string, string> = {
+  // Surrounding background by island
+  const islandBgImage: Record<string, string> = {
+    basic:   "/tiles/bg_water.png",
+    desert:  "/tiles/bg_dunes.png",
+    volcano: "/tiles/bg_lava.png",
+  };
+  const islandBgGradient: Record<string, string> = {
     basic:   "linear-gradient(180deg, #6dc3e0 0%, #4ea7d4 60%, #3a8bbf 100%)",
     spring:  "linear-gradient(180deg, #b6e0c2 0%, #88c89e 60%, #5fa57b 100%)",
     desert:  "linear-gradient(180deg, #f5d699 0%, #e6b063 60%, #c08338 100%)",
     volcano: "linear-gradient(180deg, #4a2520 0%, #2a1010 60%, #1a0808 100%)",
   };
+  const bgImg = islandBgImage[island];
+  const bgStyle: React.CSSProperties = bgImg
+    ? {
+        backgroundColor: islandBgGradient[island]?.match(/#[0-9a-f]+/i)?.[0] ?? "#444",
+        backgroundImage: `url(${bgImg})`,
+        backgroundSize: "256px 256px",
+        backgroundRepeat: "repeat",
+      }
+    : { background: islandBgGradient[island] ?? islandBgGradient.basic };
 
   return (
     <div
       className="flex-1 overflow-hidden relative cursor-grab active:cursor-grabbing"
-      style={{ background: islandBg[island] ?? islandBg.basic }}
+      style={bgStyle}
       onWheel={handleWheel}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}

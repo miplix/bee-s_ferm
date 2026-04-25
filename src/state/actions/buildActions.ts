@@ -55,6 +55,9 @@ export function build(
     }
   }
 
+  // No empty cell — do not consume resources nor mark as built
+  if (!placed) return state;
+
   return {
     ...state,
     buildings: [...state.buildings, buildingId],
