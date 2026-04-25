@@ -1,6 +1,6 @@
 import type { GameState, Cell, PendingExpansion } from "../../domain/types/game";
 import { cellKey } from "../../domain/types/game";
-import { EXPANSIONS, ISLAND_TRANSITIONS } from "../../data/expansions.data";
+import { getExpansionList, ISLAND_TRANSITIONS } from "../../data/expansions.data";
 import { RESOURCE_NODES } from "../../data/resourceNodes.data";
 import { BLOCK_SIZE, getNextExpansionPos } from "../../domain/expansion/blocks";
 import { getLevel } from "../../domain/level/level";
@@ -8,12 +8,13 @@ import { isReady } from "../../domain/time/time";
 
 /** Start an expansion (pay resources, begin build timer). */
 export function startExpansion(state: GameState, now: number): GameState {
-  if (state.pendingExpansion) return state; // already building
+  if (state.pendingExpansion) return state;
 
+  const expansions = getExpansionList(state.island);
   const nextIdx = state.expansion;
-  if (nextIdx >= EXPANSIONS.length) return state;
+  if (nextIdx >= expansions.length) return state;
 
-  const exp = EXPANSIONS[nextIdx];
+  const exp = expansions[nextIdx];
   const level = getLevel(state.xp);
   if (level < exp.minLevel) return state;
 
@@ -67,18 +68,15 @@ export function completeExpansion(state: GameState, now: number): GameState {
   if (!pending) return state;
   if (!isReady(pending.startedAt, pending.durationMs, now)) return state;
 
-  const exp = EXPANSIONS[pending.expansionIndex];
+  const expansions = getExpansionList(state.island);
+  const exp = expansions[pending.expansionIndex];
   const bp = pending.blockPos;
 
-  // Add block
   const blocks = [...state.blocks, bp];
-
-  // Place new resources on the new 3x3 block
   const cells = { ...state.cells };
   const startCx = bp.bx * BLOCK_SIZE;
   const startCy = bp.by * BLOCK_SIZE;
 
-  // Helper: place 2x2 object at first available 2x2 area in block
   function place2x2(cell: Cell): boolean {
     for (let ly = 0; ly < BLOCK_SIZE - 1; ly++) {
       for (let lx = 0; lx < BLOCK_SIZE - 1; lx++) {
@@ -100,7 +98,6 @@ export function completeExpansion(state: GameState, now: number): GameState {
     return false;
   }
 
-  // Helper: place 1x1 at first empty cell
   function place1x1(cell: Cell): boolean {
     for (let ly = 0; ly < BLOCK_SIZE; ly++) {
       for (let lx = 0; lx < BLOCK_SIZE; lx++) {
@@ -111,20 +108,28 @@ export function completeExpansion(state: GameState, now: number): GameState {
     return false;
   }
 
-  // Place trees as 2x2 first (they take more space)
+  // Trees first (2x2)
   for (let i = 0; i < exp.adds.trees; i++) {
     place2x2({ type: "tree", hitsLeft: -1, lastHarvest: 0 });
   }
 
-  // Then 1x1 items
+  // Plots and ore nodes (1x1)
   for (let i = 0; i < exp.adds.plots; i++) place1x1({ type: "plot" });
-  for (let i = 0; i < exp.adds.rocks; i++) place1x1({ type: "rock", hitsLeft: RESOURCE_NODES.rock.maxNodes, lastHarvest: 0 });
-  for (let i = 0; i < exp.adds.iron; i++) place1x1({ type: "iron", hitsLeft: RESOURCE_NODES.iron.maxNodes, lastHarvest: 0 });
-  for (let i = 0; i < exp.adds.gold; i++) place1x1({ type: "gold", hitsLeft: RESOURCE_NODES.gold.maxNodes, lastHarvest: 0 });
+  for (let i = 0; i < (exp.adds.rocks ?? 0); i++) place1x1({ type: "rock", hitsLeft: RESOURCE_NODES.rock.maxNodes, lastHarvest: 0 });
+  for (let i = 0; i < (exp.adds.iron ?? 0); i++) place1x1({ type: "iron", hitsLeft: RESOURCE_NODES.iron.maxNodes, lastHarvest: 0 });
+  for (let i = 0; i < (exp.adds.gold ?? 0); i++) place1x1({ type: "gold", hitsLeft: RESOURCE_NODES.gold.maxNodes, lastHarvest: 0 });
+  for (let i = 0; i < (exp.adds.crimstone ?? 0); i++) place1x1({ type: "crimstone", hitsLeft: RESOURCE_NODES.crimstone.maxNodes, lastHarvest: 0 });
+  for (let i = 0; i < (exp.adds.flower_beds ?? 0); i++) place1x1({ type: "flower_bed" });
+  for (let i = 0; i < (exp.adds.oil_reserve ?? 0); i++) place1x1({ type: "oil_reserve", hitsLeft: RESOURCE_NODES.oil_reserve.maxNodes, lastHarvest: 0 });
+  for (let i = 0; i < (exp.adds.greenhouse ?? 0); i++) place2x2({ type: "greenhouse" });
+  for (let i = 0; i < (exp.adds.obsidian_rock ?? 0); i++) place1x1({ type: "obsidian_rock", hitsLeft: RESOURCE_NODES.obsidian_rock.maxNodes, lastHarvest: 0 });
+  for (let i = 0; i < (exp.adds.sunstone_rock ?? 0); i++) place1x1({ type: "sunstone_rock", hitsLeft: RESOURCE_NODES.sunstone_rock.maxNodes, lastHarvest: 0 });
+  for (let i = 0; i < (exp.adds.lava_pit ?? 0); i++) place1x1({ type: "lava_pit", hitsLeft: -1, lastHarvest: 0 });
 
-  // Also restore exhausted nodes on existing blocks
+  // Restore exhausted finite nodes on existing blocks
+  const finiteTypes = ["rock", "iron", "gold", "crimstone", "oil_reserve", "obsidian_rock", "sunstone_rock"];
   for (const [key, cell] of Object.entries(cells)) {
-    if (["rock", "iron", "gold"].includes(cell.type)) {
+    if (finiteTypes.includes(cell.type) && !cell.parentKey) {
       const nodeDef = RESOURCE_NODES[cell.type];
       if (nodeDef && nodeDef.maxNodes >= 0 && (cell.hitsLeft ?? 0) <= 0) {
         cells[key] = { ...cell, hitsLeft: nodeDef.maxNodes, lastHarvest: 0 };
@@ -142,22 +147,69 @@ export function completeExpansion(state: GameState, now: number): GameState {
   };
 }
 
-/** Travel from Basic to Spring Island (costs 10 gold). */
+/** Travel from Basic → Spring Island (Lv11+, costs 10 gold). */
 export function travelToSpring(state: GameState, now: number): GameState {
   if (state.island !== "basic") return state;
 
-  const cost = ISLAND_TRANSITIONS.spring;
-  const goldNeeded = cost.gold;
+  const req = ISLAND_TRANSITIONS.spring;
+  if (getLevel(state.xp) < req.minLevel) return state;
+
   const goldHave = state.inventory.gold ?? 0;
-  if (goldHave < goldNeeded) return state;
+  if (goldHave < req.gold) return state;
 
   const inv = { ...state.inventory };
-  inv.gold = goldHave - goldNeeded;
+  inv.gold = goldHave - req.gold;
   if (inv.gold <= 0) delete inv.gold;
 
   return {
     ...state,
     island: "spring",
+    expansion: 0,
+    inventory: inv,
+    lastMeaningfulActivity: now,
+  };
+}
+
+/** Travel from Desert → Volcano Island (Lv40+, costs 50 oil). */
+export function travelToVolcano(state: GameState, now: number): GameState {
+  if (state.island !== "desert") return state;
+
+  const req = ISLAND_TRANSITIONS.volcano;
+  if (getLevel(state.xp) < req.minLevel) return state;
+
+  const oilHave = state.inventory.oil ?? 0;
+  if (oilHave < req.oil) return state;
+
+  const inv = { ...state.inventory };
+  inv.oil = oilHave - req.oil;
+  if (inv.oil <= 0) delete inv.oil;
+
+  return {
+    ...state,
+    island: "volcano",
+    expansion: 0,
+    inventory: inv,
+    lastMeaningfulActivity: now,
+  };
+}
+
+/** Travel from Spring → Desert Island (Lv30+, costs 20 crimstone). */
+export function travelToDesert(state: GameState, now: number): GameState {
+  if (state.island !== "spring") return state;
+
+  const req = ISLAND_TRANSITIONS.desert;
+  if (getLevel(state.xp) < req.minLevel) return state;
+
+  const csHave = state.inventory.crimstone ?? 0;
+  if (csHave < req.crimstone) return state;
+
+  const inv = { ...state.inventory };
+  inv.crimstone = csHave - req.crimstone;
+  if (inv.crimstone <= 0) delete inv.crimstone;
+
+  return {
+    ...state,
+    island: "desert",
     expansion: 0,
     inventory: inv,
     lastMeaningfulActivity: now,

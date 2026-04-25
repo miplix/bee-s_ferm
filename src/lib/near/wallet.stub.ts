@@ -1,3 +1,5 @@
+import { log } from "../log";
+
 /**
  * NEAR Wallet Stub — placeholder for Etap 8.
  * Real implementation will use near-api-js.
@@ -16,21 +18,21 @@ const stubState: WalletState = {
 };
 
 export async function connectWallet(): Promise<WalletState> {
-  console.log("[NEAR Stub] Connect wallet — not implemented yet");
+  log.debug("[NEAR Stub] Connect wallet — not implemented yet");
   return stubState;
 }
 
 export async function disconnectWallet(): Promise<void> {
-  console.log("[NEAR Stub] Disconnect wallet — not implemented yet");
+  log.debug("[NEAR Stub] Disconnect wallet — not implemented yet");
 }
 
 export async function withdrawPollen(_amount: number): Promise<{ success: boolean; txHash?: string }> {
-  console.log("[NEAR Stub] Withdraw pollen — not implemented yet");
+  log.debug("[NEAR Stub] Withdraw pollen — not implemented yet");
   return { success: false };
 }
 
 export async function depositPollen(_amount: number): Promise<{ success: boolean; txHash?: string }> {
-  console.log("[NEAR Stub] Deposit pollen — not implemented yet");
+  log.debug("[NEAR Stub] Deposit pollen — not implemented yet");
   return { success: false };
 }
 

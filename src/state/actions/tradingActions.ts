@@ -71,8 +71,35 @@ export function cancelListing(
 }
 
 /**
- * STUB: Buy a listing from another player.
- * In production this would go through a backend.
- * For now we export the tax constant so the UI can reference it.
+ * Buy a listing (local mode — no backend).
+ * Deducts coins, adds items, removes listing.
+ * In production this would be replaced by a Supabase Edge Function call.
  */
+export function buyListing(
+  state: GameState,
+  listingId: string,
+  now: number,
+): GameState {
+  const idx = state.tradeListings.findIndex((l) => l.id === listingId);
+  if (idx < 0) return state;
+
+  const listing = state.tradeListings[idx];
+  const totalCost = parseFloat((listing.qty * listing.pricePerUnit).toFixed(4));
+  if (state.coins < totalCost - 0.001) return state;
+
+  const inv = { ...state.inventory };
+  inv[listing.itemId] = (inv[listing.itemId] ?? 0) + listing.qty;
+
+  const newListings = [...state.tradeListings];
+  newListings.splice(idx, 1);
+
+  return {
+    ...state,
+    coins: parseFloat((state.coins - totalCost).toFixed(4)),
+    inventory: inv,
+    tradeListings: newListings,
+    lastMeaningfulActivity: now,
+  };
+}
+
 export { MARKETPLACE_TAX };

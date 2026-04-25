@@ -502,7 +502,7 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
             alt=""
             className={`absolute object-contain pointer-events-none ${exhausted ? "grayscale" : ""}`}
             style={{ top: 0, left: 0, width: CELL_SIZE * sz, height: CELL_SIZE * sz }}
-            onError={(e) => { (e.currentTarget as HTMLImageElement).outerHTML = `<span class="absolute flex items-center justify-center pointer-events-none" style="top:0;left:0;width:${CELL_SIZE * sz}px;height:${CELL_SIZE * sz}px;font-size:${iconSize}">${fallbackIcon}</span>`; }}
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
           />
         ) : (
           <span
@@ -589,7 +589,7 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
           src={hiveImg}
           alt=""
           className="w-11 h-11 object-contain pointer-events-none"
-          onError={(e) => { (e.currentTarget as HTMLImageElement).outerHTML = '<span class="text-lg">🐝</span>'; }}
+          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
         />
       </div>
     );

@@ -13,9 +13,11 @@ export function TradingPanel() {
   const [price, setPrice] = useState(1);
 
   const inventory = useStore((s) => s.inventory);
+  const coins = useStore((s) => s.coins);
   const tradeListings = useStore((s) => s.tradeListings);
   const createListing = useStore((s) => s.createListing);
   const cancelListing = useStore((s) => s.cancelListing);
+  const buyListing = useStore((s) => s.buyListing);
 
   const handleCreate = () => {
     createListing(selectedItem, qty, price);
@@ -27,14 +29,14 @@ export function TradingPanel() {
   const canCreate = ownedQty >= qty && qty >= 1 && price > 0;
 
   return (
-    <PanelShell title="Trading">
+    <PanelShell title="Торговля">
       {/* Tabs */}
       <div className="flex gap-1 mb-3">
         {(["create", "listings", "marketplace"] as Tab[]).map((t) => (
           <button key={t} onClick={() => setTab(t)}
             className={`font-game text-[8px] px-3 py-1 border border-black/30
               ${tab === t ? "bg-brown-400 text-white" : "bg-brown-600 text-white/60"}`}>
-            {t === "create" ? "Create Listing" : t === "listings" ? "My Listings" : "Marketplace"}
+            {t === "create" ? "Создать лот" : t === "listings" ? "Мои лоты" : "Маркет"}
           </button>
         ))}
       </div>
@@ -43,7 +45,7 @@ export function TradingPanel() {
         <div className="space-y-2">
           {/* Item select */}
           <div>
-            <label className="font-game text-[7px] text-yellow-300 block mb-1">Item</label>
+            <label className="font-game text-[7px] text-yellow-300 block mb-1">Товар</label>
             <select value={selectedItem}
               onChange={(e) => setSelectedItem(e.target.value)}
               className="w-full bg-brown-700 text-white font-game text-[8px] p-1 border border-black/30">
@@ -58,7 +60,7 @@ export function TradingPanel() {
           {/* Qty input */}
           <div>
             <label className="font-game text-[7px] text-yellow-300 block mb-1">
-              Quantity (owned: {ownedQty})
+              Количество (есть: {ownedQty})
             </label>
             <input type="number" min={1} max={ownedQty} value={qty}
               onChange={(e) => setQty(Math.max(1, parseInt(e.target.value) || 1))}
@@ -68,7 +70,7 @@ export function TradingPanel() {
           {/* Price input */}
           <div>
             <label className="font-game text-[7px] text-yellow-300 block mb-1">
-              Price per unit (coins)
+              Цена за штуку (монеты)
             </label>
             <input type="number" min={0.01} step={0.01} value={price}
               onChange={(e) => setPrice(Math.max(0.01, parseFloat(e.target.value) || 0.01))}
@@ -78,15 +80,15 @@ export function TradingPanel() {
           {/* Summary */}
           <div className="p-2 bg-brown-800 border border-black/30">
             <div className="font-game text-[7px] text-white/70">
-              Total: {(qty * price).toFixed(2)} coins
+              Итого: {(qty * price).toFixed(2)} монет
             </div>
             <div className="font-game text-[6px] text-white/50">
-              Tax ({(MARKETPLACE_TAX * 100).toFixed(0)}%): -{(qty * price * MARKETPLACE_TAX).toFixed(2)} coins
+              Налог ({(MARKETPLACE_TAX * 100).toFixed(0)}%): -{(qty * price * MARKETPLACE_TAX).toFixed(2)} монет
             </div>
           </div>
 
           <PixelButton disabled={!canCreate} onClick={handleCreate}>
-            List for Sale
+            Выставить на продажу
           </PixelButton>
         </div>
       )}
@@ -95,7 +97,7 @@ export function TradingPanel() {
         <div className="space-y-1">
           {tradeListings.length === 0 && (
             <div className="p-3 text-center">
-              <span className="font-game text-[8px] text-white/50">No active listings</span>
+              <span className="font-game text-[8px] text-white/50">Нет активных лотов</span>
             </div>
           )}
           {tradeListings.map((listing) => (
@@ -111,7 +113,7 @@ export function TradingPanel() {
               </div>
               <PixelButton variant="danger"
                 onClick={() => cancelListing(listing.id)}>
-                Cancel
+                Отменить
               </PixelButton>
             </div>
           ))}
@@ -119,14 +121,36 @@ export function TradingPanel() {
       )}
 
       {tab === "marketplace" && (
-        <div className="p-4 text-center">
-          <div className="font-game text-[9px] text-white/60 mb-2">
-            Coming soon
-          </div>
-          <div className="font-game text-[7px] text-white/40">
-            Buying from other players requires a multiplayer backend.
-            For now, you can create listings and manage them locally.
-          </div>
+        <div className="space-y-1">
+          <p className="font-game text-[6px] text-white/40 mb-1">
+            Локальный режим — в продакшне будет синхронизация с другими игроками.
+          </p>
+          {tradeListings.length === 0 && (
+            <p className="font-game text-[8px] text-white/50 py-3 text-center">Нет активных лотов</p>
+          )}
+          {tradeListings.map((listing) => {
+            const total = parseFloat((listing.qty * listing.pricePerUnit).toFixed(2));
+            const canBuy = coins >= total - 0.001;
+            return (
+              <div key={listing.id}
+                className="flex items-center gap-2 p-1.5 border border-black/20 bg-brown-600">
+                <div className="flex-1 min-w-0">
+                  <div className="font-game text-[7px] text-white truncate">
+                    {listing.itemId} ×{listing.qty}
+                  </div>
+                  <div className="font-game text-[6px] text-yellow-300">
+                    {listing.pricePerUnit.toFixed(2)}c/шт → {total}c
+                  </div>
+                </div>
+                <PixelButton
+                  disabled={!canBuy}
+                  onClick={() => buyListing(listing.id)}
+                >
+                  Купить
+                </PixelButton>
+              </div>
+            );
+          })}
         </div>
       )}
     </PanelShell>

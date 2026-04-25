@@ -13,14 +13,14 @@ type Tab = "seeds" | "fruits" | "flowers" | "greenhouse" | "sell";
 
 // Deflationary resource sell prices
 const RESOURCE_SELL: Record<string, { price: number; icon: string; name: string }> = {
-  wood:  { price: 0.02, icon: "🪵", name: "Wood" },
-  stone: { price: 0.05, icon: "🪨", name: "Stone" },
-  iron:  { price: 0.20, icon: "⛓️", name: "Iron" },
-  gold:  { price: 1.00, icon: "✨", name: "Gold" },
-  egg:   { price: 0.30, icon: "🥚", name: "Egg" },
-  milk:  { price: 0.80, icon: "🥛", name: "Milk" },
-  wool:  { price: 0.50, icon: "🧶", name: "Wool" },
-  honey: { price: 5.00, icon: "🍯", name: "Honey" },
+  wood:  { price: 0.02, icon: "🪵", name: "Дерево" },
+  stone: { price: 0.05, icon: "🪨", name: "Камень" },
+  iron:  { price: 0.20, icon: "⛓️", name: "Железо" },
+  gold:  { price: 1.00, icon: "✨", name: "Золото" },
+  egg:   { price: 0.30, icon: "🥚", name: "Яйцо" },
+  milk:  { price: 0.80, icon: "🥛", name: "Молоко" },
+  wool:  { price: 0.50, icon: "🧶", name: "Шерсть" },
+  honey: { price: 5.00, icon: "🍯", name: "Мёд" },
 };
 
 export function ShopPanel() {
@@ -37,13 +37,13 @@ export function ShopPanel() {
   const sellAll = useStore((s) => s.sellAll);
 
   return (
-    <PanelShell title="Market">
+    <PanelShell title="Магазин">
       <div className="flex gap-1 mb-3 flex-wrap">
         {(["seeds", "fruits", "flowers", "greenhouse", "sell"] as Tab[]).map((t) => (
           <button key={t} onClick={() => setTab(t)}
             className={`font-game text-[8px] px-3 py-1 border border-black/30
               ${tab === t ? "bg-brown-400 text-white" : "bg-brown-600 text-white/60"}`}>
-            {t === "seeds" ? "Seeds" : t === "fruits" ? "Fruits" : t === "flowers" ? "Flowers" : t === "greenhouse" ? "Greenhouse" : "Sell"}
+            {t === "seeds" ? "Семена" : t === "fruits" ? "Фрукты" : t === "flowers" ? "Цветы" : t === "greenhouse" ? "Теплица" : "Продать"}
           </button>
         ))}
       </div>
@@ -77,7 +77,7 @@ export function ShopPanel() {
                     <span className="font-game text-[7px] text-white/60 w-6 text-right">{owned}</span>
                     <PixelButton disabled={!canAfford}
                       onClick={() => { buySeed(crop.id as CropId, 1); selectTool(seedId); }}>
-                      Buy
+                      Купить
                     </PixelButton>
                   </>
                 )}
@@ -116,7 +116,7 @@ export function ShopPanel() {
                     <span className="font-game text-[7px] text-white/60 w-6 text-right">{owned}</span>
                     <PixelButton disabled={!canAfford}
                       onClick={() => { buyFruitSeed(fruit.id as FruitId, 1); selectTool(seedId); }}>
-                      Buy
+                      Купить
                     </PixelButton>
                   </>
                 )}
@@ -155,7 +155,7 @@ export function ShopPanel() {
                     <span className="font-game text-[7px] text-white/60 w-6 text-right">{owned}</span>
                     <PixelButton disabled={!canAfford}
                       onClick={() => { buyFlowerSeed(flower.id as FlowerId, 1); selectTool(seedId); }}>
-                      Buy
+                      Купить
                     </PixelButton>
                   </>
                 )}
@@ -194,7 +194,7 @@ export function ShopPanel() {
                     <span className="font-game text-[7px] text-white/60 w-6 text-right">{owned}</span>
                     <PixelButton disabled={!canAfford}
                       onClick={() => { buyGreenhouseSeed(crop.id as GreenhouseCropId, 1); selectTool(seedId); }}>
-                      Buy
+                      Купить
                     </PixelButton>
                   </>
                 )}
@@ -207,7 +207,7 @@ export function ShopPanel() {
       {tab === "sell" && (
         <div className="space-y-1">
           {/* Crops */}
-          <h4 className="font-game text-[7px] text-yellow-300">Crops</h4>
+          <h4 className="font-game text-[7px] text-yellow-300">Культуры</h4>
           {CROPS.map((crop) => {
             const qty = inventory[crop.id] ?? 0;
             return (
@@ -221,13 +221,13 @@ export function ShopPanel() {
                 </div>
                 <span className="font-game text-[7px] text-white/60">{qty}</span>
                 <PixelButton variant="secondary" disabled={qty < 1} onClick={() => sell(crop.id, 1)}>1</PixelButton>
-                <PixelButton variant="secondary" disabled={qty < 1} onClick={() => sellAll(crop.id)}>All</PixelButton>
+                <PixelButton variant="secondary" disabled={qty < 1} onClick={() => sellAll(crop.id)}>Всё</PixelButton>
               </div>
             );
           })}
 
           {/* Fruits */}
-          <h4 className="font-game text-[7px] text-yellow-300 mt-2">Fruits</h4>
+          <h4 className="font-game text-[7px] text-yellow-300 mt-2">Фрукты</h4>
           {FRUITS.map((fruit) => {
             const qty = inventory[fruit.id] ?? 0;
             return (
@@ -247,7 +247,7 @@ export function ShopPanel() {
           })}
 
           {/* Greenhouse Crops */}
-          <h4 className="font-game text-[7px] text-yellow-300 mt-2">Greenhouse</h4>
+          <h4 className="font-game text-[7px] text-yellow-300 mt-2">Теплица</h4>
           {GREENHOUSE_CROPS.map((crop) => {
             const qty = inventory[crop.id] ?? 0;
             return (
@@ -261,13 +261,13 @@ export function ShopPanel() {
                 </div>
                 <span className="font-game text-[7px] text-white/60">{qty}</span>
                 <PixelButton variant="secondary" disabled={qty < 1} onClick={() => sell(crop.id, 1)}>1</PixelButton>
-                <PixelButton variant="secondary" disabled={qty < 1} onClick={() => sellAll(crop.id)}>All</PixelButton>
+                <PixelButton variant="secondary" disabled={qty < 1} onClick={() => sellAll(crop.id)}>Всё</PixelButton>
               </div>
             );
           })}
 
           {/* Resources */}
-          <h4 className="font-game text-[7px] text-yellow-300 mt-2">Resources</h4>
+          <h4 className="font-game text-[7px] text-yellow-300 mt-2">Ресурсы</h4>
           {Object.entries(RESOURCE_SELL).map(([id, { price, icon, name }]) => {
             const qty = inventory[id] ?? 0;
             return (
@@ -281,7 +281,7 @@ export function ShopPanel() {
                 </div>
                 <span className="font-game text-[7px] text-white/60">{qty}</span>
                 <PixelButton variant="secondary" disabled={qty < 1} onClick={() => sell(id, 1)}>1</PixelButton>
-                <PixelButton variant="secondary" disabled={qty < 1} onClick={() => sellAll(id)}>All</PixelButton>
+                <PixelButton variant="secondary" disabled={qty < 1} onClick={() => sellAll(id)}>Всё</PixelButton>
               </div>
             );
           })}

@@ -107,7 +107,19 @@ export function Hud() {
         title="Inventory"
       >
         <span className="text-sm leading-none">🎒</span>
-        <span className="font-game text-[6px] text-white/70">Inv</span>
+        <span className="font-game text-[6px] text-white/70">Инв</span>
+      </button>
+
+      {/* Settings button */}
+      <button
+        onClick={() => setPanel(activePanel === "settings" ? null : "settings")}
+        className={`flex flex-col items-center px-2 py-0.5 border border-black/40 rounded
+          ${activePanel === "settings" ? "bg-brown-400" : "bg-brown-600 hover:bg-brown-500"}
+          transition-colors`}
+        title="Настройки"
+      >
+        <span className="text-sm leading-none">⚙️</span>
+        <span className="font-game text-[6px] text-white/70">Меню</span>
       </button>
     </div>
   );

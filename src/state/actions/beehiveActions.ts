@@ -8,7 +8,8 @@ import {
   DEMO_UPGRADE_ACTIONS,
   DEMO_INSTANT_UPGRADE_COST,
   DEMO_POLLEN_PER_DAY,
-  LV1_POLLEN_PER_DAY,
+  BEEHIVE_LEVELS,
+  BEEHIVE_MAX_LEVEL,
 } from "../../data/beehives.data";
 
 /** Perform an action on the demo beehive (3x/day, 8h cooldown). */
@@ -144,6 +145,33 @@ export function upgradeDemoHive(
   return { ...state, beehives: newBeehives, lastMeaningfulActivity: now };
 }
 
+/** Upgrade a Lv1 or Lv2 beehive to the next level (costs pollen). */
+export function upgradeBeehive(
+  state: GameState,
+  hiveId: string,
+  now: number,
+): GameState {
+  const idx = state.beehives.findIndex((h) => h.id === hiveId);
+  if (idx < 0) return state;
+
+  const hive = state.beehives[idx];
+  if (hive.level === 0 || hive.level >= BEEHIVE_MAX_LEVEL) return state;
+
+  const nextLevel = hive.level + 1;
+  const cost = BEEHIVE_LEVELS[nextLevel]?.upgradeCost ?? 0;
+  if (state.pollen < cost) return state;
+
+  const newBeehives = [...state.beehives];
+  newBeehives[idx] = { ...hive, level: nextLevel };
+
+  return {
+    ...state,
+    pollen: parseFloat((state.pollen - cost).toFixed(4)),
+    beehives: newBeehives,
+    lastMeaningfulActivity: now,
+  };
+}
+
 /** Accrue passive pollen for all hives (called by tickPassive). */
 export function accruePassivePollen(
   state: GameState,
@@ -151,7 +179,7 @@ export function accruePassivePollen(
 ): GameState {
   let totalAccrued = 0;
   const newBeehives = state.beehives.map((hive) => {
-    const rate = hive.level === 0 ? DEMO_POLLEN_PER_DAY : LV1_POLLEN_PER_DAY * hive.level;
+    const rate = hive.level === 0 ? DEMO_POLLEN_PER_DAY : (BEEHIVE_LEVELS[hive.level]?.pollenPerDay ?? 0);
     const elapsedMs = now - hive.lastAccrualAt;
     if (elapsedMs <= 0) return hive;
 

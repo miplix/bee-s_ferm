@@ -5,11 +5,13 @@ export type CropId =
   | "carrot" | "yam" | "cabbage" | "broccoli" | "soybean"
   | "beetroot" | "pepper" | "cauliflower" | "parsnip" | "eggplant"
   | "corn" | "onion" | "radish" | "wheat" | "turnip"
-  | "kale" | "artichoke" | "barley";
+  | "kale" | "artichoke" | "barley"
+  | "cactus" | "dates" | "agave"
+  | "dragon_fruit" | "lava_rose";
 
 export type SeedId = `${CropId}_seed`;
 
-export type ResourceId = "wood" | "stone" | "iron" | "gold";
+export type ResourceId = "wood" | "stone" | "iron" | "gold" | "crimstone" | "oil" | "obsidian" | "sunstone";
 
 export type ToolId = "axe" | "stone_pickaxe" | "iron_pickaxe" | "gold_pickaxe" | "fishing_rod";
 
@@ -36,7 +38,7 @@ export type PanelId =
   | "shop" | "inventory" | "cook" | "craft"
   | "build" | "expand" | "beehive" | "animals"
   | "fishing" | "skills" | "deliveries" | "chores"
-  | "trading" | "faction" | "pets" | "crop_machine";
+  | "trading" | "faction" | "pets" | "crop_machine" | "settings";
 
 export type LocationId = "farm" | "henhouse" | "barn";
 
@@ -48,5 +50,6 @@ export type FlowerId = "sunpetal" | "bloom" | "lily";
 export type GreenhouseCropId = "grape" | "rice" | "olive";
 
 export type CellType =
-  | "empty" | "plot" | "tree" | "rock" | "iron" | "gold"
+  | "empty" | "plot" | "tree" | "rock" | "iron" | "gold" | "crimstone"
+  | "oil_reserve" | "obsidian_rock" | "sunstone_rock" | "lava_pit"
   | "building" | "beehive" | "fruit_patch" | "flower_bed" | "greenhouse";

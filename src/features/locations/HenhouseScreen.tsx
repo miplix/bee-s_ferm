@@ -33,20 +33,20 @@ export function HenhouseScreen() {
         <div className="flex items-center gap-2">
           <span className="text-2xl">🐔</span>
           <span className="font-game text-[12px] text-yellow-300">
-            Henhouse Lv.{henhouseLevel} ({chickens.length}/{capacity})
+            Курятник Ур.{henhouseLevel} ({chickens.length}/{capacity})
           </span>
         </div>
         <button
           onClick={() => setLocation("farm")}
           className="font-game text-[8px] text-yellow-300 underline"
         >
-          Back to Farm
+          ← На ферму
         </button>
       </div>
 
       {/* Feed info */}
       <div className="mb-3 font-game text-[7px] text-white/60">
-        Wheat available: {wheat} | Feed: wheat
+        Пшеница: {wheat} | Корм: пшеница
       </div>
 
       {/* Buy button */}
@@ -55,7 +55,7 @@ export function HenhouseScreen() {
           disabled={chickens.length >= capacity || coins < 50}
           onClick={() => buyAnimal("chicken")}
         >
-          Buy Chicken (50c)
+          Купить курицу (50м)
         </PixelButton>
       </div>
 
@@ -72,7 +72,7 @@ export function HenhouseScreen() {
               disabled={!canUpgrade}
               onClick={() => upgradeBuildingAction("henhouse")}
             >
-              Upgrade to Lv.{upgrade.toLevel} (
+              Улучшить до Ур.{upgrade.toLevel} (
               {Object.entries(upgrade.cost)
                 .map(([r, n]) => `${n} ${r}`)
                 .join(", ")}
@@ -101,35 +101,33 @@ export function HenhouseScreen() {
                 <span className="text-lg">{chicken.diseased ? "🤒" : "🐔"}</span>
                 <div className="flex-1">
                   <div className="font-game text-[8px] text-white">
-                    Lv.{lvl.level} | XP: {chicken.xp}/{lvl.level < 6 ? getAnimalLevel("chicken", lvl.xpNeeded + 1).xpNeeded || "MAX" : "MAX"}
+                    Ур.{lvl.level} | XP: {chicken.xp}
                   </div>
                   <div className="font-game text-[6px] text-white/50">
-                    Produces: {lvl.amount} {lvl.product} | Feed: {lvl.feedCost} wheat
+                    Даёт: {lvl.amount} {lvl.product} | Корм: {lvl.feedCost} пшеницы
                   </div>
                 </div>
 
-                {/* Actions */}
                 {chicken.diseased && (
                   <PixelButton variant="danger" onClick={() => cureAnimal(chicken.id)}>
-                    Cure
+                    Лечить
                   </PixelButton>
                 )}
                 {!producing && !ready && (
                   <PixelButton disabled={!canFeed} onClick={() => feedAnimal(chicken.id)}>
-                    Feed
+                    Кормить
                   </PixelButton>
                 )}
                 {ready && (
                   <PixelButton onClick={() => collectAnimal(chicken.id)}>
-                    Collect
+                    Собрать
                   </PixelButton>
                 )}
                 <PixelButton variant="danger" onClick={() => sellAnimal(chicken.id)}>
-                  Sell
+                  Продать
                 </PixelButton>
               </div>
 
-              {/* Production progress */}
               {producing && !ready && (
                 <div className="mt-1">
                   <Progress value={prog} color="bg-orange-400" />
@@ -140,7 +138,7 @@ export function HenhouseScreen() {
               )}
               {ready && (
                 <div className="font-game text-[7px] text-green-400 mt-1">
-                  Ready to collect!
+                  Готово!
                 </div>
               )}
             </div>
@@ -148,7 +146,7 @@ export function HenhouseScreen() {
         })}
 
         {chickens.length === 0 && (
-          <p className="font-game text-[8px] text-white/50">No chickens yet. Buy one!</p>
+          <p className="font-game text-[8px] text-white/50">Нет кур. Купите первую!</p>
         )}
       </div>
     </div>

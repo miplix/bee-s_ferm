@@ -28,12 +28,12 @@ export function CookPanel() {
     .map(([k, qty]) => ({ recipeId: k.replace("meal_", ""), qty }));
 
   return (
-    <PanelShell title="Cooking">
+    <PanelShell title="Готовка">
       <div className="space-y-3">
         {/* Active cooking slots */}
         {cookingSlots.length > 0 && (
           <div className="space-y-1">
-            <h3 className="font-game text-[8px] text-yellow-300">Cooking...</h3>
+            <h3 className="font-game text-[8px] text-yellow-300">Готовится...</h3>
             {cookingSlots.map((slot, i) => {
               const prog = calcProgress(slot.startedAt, slot.durationMs, now);
               const ready = prog >= 1;
@@ -54,7 +54,7 @@ export function CookPanel() {
                   </div>
                   {ready && (
                     <PixelButton onClick={() => collectMeal(i)}>
-                      Collect
+                      Забрать
                     </PixelButton>
                   )}
                 </div>
@@ -66,7 +66,7 @@ export function CookPanel() {
         {/* Meals ready to feed */}
         {meals.length > 0 && (
           <div className="space-y-1">
-            <h3 className="font-game text-[8px] text-green-300">Feed Bumpkin (XP)</h3>
+            <h3 className="font-game text-[8px] text-green-300">Накормить (XP)</h3>
             {meals.map(({ recipeId, qty }) => {
               const recipe = RECIPES.find((r) => r.id === recipeId);
               return (
@@ -77,7 +77,7 @@ export function CookPanel() {
                     <div className="font-game text-[6px] text-yellow-300">+{recipe?.xp} XP</div>
                   </div>
                   <PixelButton onClick={() => feedBumpkin(recipeId)}>
-                    Eat
+                    Съесть
                   </PixelButton>
                 </div>
               );
@@ -86,7 +86,7 @@ export function CookPanel() {
         )}
 
         {/* Recipe list */}
-        <h3 className="font-game text-[8px] text-yellow-300">Recipes</h3>
+        <h3 className="font-game text-[8px] text-yellow-300">Рецепты</h3>
         <div className="space-y-1">
           {available.map((recipe) => {
             const canCook = recipe.ingredients.every(
@@ -106,7 +106,7 @@ export function CookPanel() {
                   </div>
                 </div>
                 <PixelButton disabled={!canCook} onClick={() => startCooking(recipe.id)}>
-                  Cook
+                  Готовить
                 </PixelButton>
               </div>
             );

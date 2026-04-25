@@ -52,3 +52,47 @@ export const PETS: PetDef[] = [
 export function getPetDef(id: string): PetDef | undefined {
   return PETS.find((p) => p.id === id);
 }
+
+// --- Pet XP system ---
+
+/** Nap cooldown: 4 hours. */
+export const PET_NAP_COOLDOWN_MS = 4 * 3_600_000;
+
+/** XP gained per nap. */
+export const PET_XP_PER_NAP = 10;
+
+/** XP gained per feeding (1 wheat). */
+export const PET_FEED_XP = 5;
+
+/** Feed cost per session. */
+export const PET_FEED_COST: Record<string, number> = { wheat: 1 };
+
+export interface PetLevelDef {
+  level: number;
+  xpRequired: number;
+  boostMultiplier: number; // multiplier applied on top of pet's base boost
+}
+
+export const PET_LEVELS: PetLevelDef[] = [
+  { level: 1, xpRequired: 0,   boostMultiplier: 1.00 },
+  { level: 2, xpRequired: 50,  boostMultiplier: 1.25 },
+  { level: 3, xpRequired: 150, boostMultiplier: 1.50 },
+  { level: 4, xpRequired: 300, boostMultiplier: 1.75 },
+  { level: 5, xpRequired: 500, boostMultiplier: 2.00 },
+];
+
+export function getPetLevel(xp: number): PetLevelDef {
+  let result = PET_LEVELS[0];
+  for (const def of PET_LEVELS) {
+    if (xp >= def.xpRequired) result = def;
+  }
+  return result;
+}
+
+export function getPetLevelProgress(xp: number): number {
+  const cur = getPetLevel(xp);
+  const nextIdx = cur.level; // PET_LEVELS is 1-indexed, so next is cur.level (0-based idx)
+  const next = PET_LEVELS[nextIdx];
+  if (!next) return 1; // max level
+  return (xp - cur.xpRequired) / (next.xpRequired - cur.xpRequired);
+}

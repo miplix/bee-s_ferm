@@ -8,7 +8,7 @@ export function FactionPanel() {
   const joinFaction = useStore((s) => s.joinFaction);
 
   return (
-    <PanelShell title="Factions">
+    <PanelShell title="Фракции">
       {faction ? (
         <ActiveFaction factionId={faction} />
       ) : (
@@ -28,7 +28,7 @@ function ActiveFaction({ factionId }: { factionId: string }) {
       <h3 className="font-game text-[10px] text-yellow-300">{def.name}</h3>
       <p className="font-game text-[7px] text-green-400">{def.description}</p>
       <p className="font-game text-[6px] text-white/50">
-        You are a proud member of the {def.name} faction!
+        Вы — гордый член фракции {def.name}!
       </p>
     </div>
   );
@@ -38,7 +38,7 @@ function FactionPicker({ onJoin }: { onJoin: (id: string) => void }) {
   return (
     <div className="space-y-3">
       <p className="font-game text-[7px] text-white/70 text-center mb-2">
-        Choose your faction. This choice is permanent!
+        Выберите фракцию. Выбор необратим!
       </p>
       {FACTIONS.map((f) => (
         <div
@@ -57,7 +57,7 @@ function FactionPicker({ onJoin }: { onJoin: (id: string) => void }) {
             onClick={() => onJoin(f.id)}
             className="w-full !text-[7px]"
           >
-            Join {f.name}
+            Вступить в {f.name}
           </PixelButton>
         </div>
       ))}

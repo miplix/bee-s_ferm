@@ -23,33 +23,35 @@ export function nodeSrc(nodeType: string, exhausted: boolean): string {
 }
 
 export function buildingSrc(buildingId: string, level = 1): string {
+  // Prefer AI v2 (bg removed, clean style)
   if (buildingId === "campfire") return "/buildings/ai/campfire.png";
   if (buildingId === "feeder") return "/buildings/ai/feeder.png";
   if (buildingId === "town_hall") return "/buildings/ai/town_hall.png";
   if (buildingId === "fishing_dock") return "/buildings/ai/fishing_dock.png";
   if (buildingId === "toolshed") return "/buildings/ai/toolshed.png";
   if (buildingId === "bulletin_board") return "/buildings/ai/bulletin_board.png";
+
   if (buildingId === "henhouse") {
     if (level >= 3) return "/buildings/ai/henhouse_lv3.png";
     if (level >= 2) return "/buildings/ai/henhouse_lv2.png";
-    return "/buildings/hen_house.png";
+    return "/buildings/ai_v2/henhouse_lv1.png";
   }
   if (buildingId === "barn") {
     if (level >= 3) return "/buildings/ai/barn_lv3.png";
     if (level >= 2) return "/buildings/ai/barn_lv2.png";
-    return "/buildings/chicken_coop_nft.png";
+    return "/buildings/ai_v2/barn_lv1.png";
   }
+
   const map: Record<string, string> = {
-    workbench: "/buildings/workbench.png",
-    market: "/buildings/market.png",
-    well: "/buildings/water_well.png",
-    kitchen: "/buildings/kitchen.png",
-    bakery: "/buildings/bakery.png",
-    bakery_lv1: "/buildings/bakery.png",
-    crop_machine: "/buildings/crop_machine.png",
-    greenhouse: "/buildings/greenhouse.png",
-    pet_house: "/buildings/pet_house.png",
-    trading_post: "/buildings/fish_market.png",
+    workbench: "/buildings/ai_v2/workbench.png",
+    market: "/buildings/ai_v2/market.png",
+    well: "/buildings/ai_v2/water_well.png",
+    kitchen: "/buildings/ai_v2/kitchen.png",
+    bakery: "/buildings/ai_v2/bakery.png",
+    crop_machine: "/buildings/ai_v2/crop_machine.png",
+    greenhouse: "/buildings/ai_v2/greenhouse.png",
+    pet_house: "/buildings/ai_v2/pet_house.png",
+    trading_post: "/buildings/ai_v2/trading_post.png",
   };
   return map[buildingId] ?? "";
 }

@@ -1,7 +1,7 @@
 import type { GameState } from "../../domain/types/game";
 import { cellKey } from "../../domain/types/game";
 import type { CropId } from "../../domain/types/ids";
-import { getCropDef } from "../../data/crops.data";
+import { getCropDef, ISLAND_ORDER } from "../../data/crops.data";
 import { getLevel } from "../../domain/level/level";
 import { elapsed } from "../../domain/time/time";
 import { getCurrentSeason, isCropInSeason } from "../../domain/seasons/seasons";
@@ -30,6 +30,9 @@ export function plant(
 
   const crop = getCropDef(cropId);
   if (getLevel(state.xp) < crop.level) return state;
+
+  // Island check: some crops require a specific island (desert/volcano)
+  if (crop.minIsland && ISLAND_ORDER[state.island] < ISLAND_ORDER[crop.minIsland]) return state;
 
   // Season check: on non-basic islands, seasonal crops can only be planted in their season
   if (state.island !== "basic") {

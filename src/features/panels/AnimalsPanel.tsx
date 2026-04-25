@@ -13,7 +13,7 @@ export function AnimalsPanel() {
   const cows = animals.filter((a) => a.kind === "cow").length;
 
   return (
-    <PanelShell title="Animals">
+    <PanelShell title="Животные">
       <div className="space-y-3">
         {hasHenhouse ? (
           <div className="bg-brown-600 p-2 border border-black/20">
@@ -21,17 +21,17 @@ export function AnimalsPanel() {
               <div>
                 <span className="text-lg">🐔</span>
                 <span className="font-game text-[8px] text-white ml-2">
-                  Henhouse ({chickens}/10)
+                  Курятник ({chickens}/10)
                 </span>
               </div>
               <PixelButton onClick={() => setLocation("henhouse")}>
-                Enter
+                Войти
               </PixelButton>
             </div>
           </div>
         ) : (
           <p className="font-game text-[7px] text-white/50">
-            Build a Henhouse (Lv.6) to raise chickens.
+            Постройте Курятник (Ур.6) чтобы разводить кур.
           </p>
         )}
 
@@ -41,17 +41,17 @@ export function AnimalsPanel() {
               <div>
                 <span className="text-lg">🐄</span>
                 <span className="font-game text-[8px] text-white ml-2">
-                  Barn ({cows}/10)
+                  Хлев ({cows}/10)
                 </span>
               </div>
               <PixelButton onClick={() => setLocation("barn")}>
-                Enter
+                Войти
               </PixelButton>
             </div>
           </div>
         ) : (
           <p className="font-game text-[7px] text-white/50">
-            Build a Barn (Lv.12) to raise cows.
+            Постройте Хлев (Ур.12) чтобы разводить коров.
           </p>
         )}
       </div>

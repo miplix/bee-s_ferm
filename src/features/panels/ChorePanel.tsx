@@ -19,21 +19,21 @@ export function ChorePanel() {
   const claimedCount = chores.active.filter((c) => c.claimed).length;
 
   return (
-    <PanelShell title="Chore Board">
+    <PanelShell title="Задания">
       {/* Header */}
       <div className="flex items-center justify-between mb-2 p-2 bg-brown-800 border border-black/30">
         <span className="font-game text-[8px] text-white">
-          Daily Chores
+          Ежедневные задания
         </span>
         <span className="font-game text-[7px] text-white/50">
-          {claimedCount}/{chores.active.length} done
+          {claimedCount}/{chores.active.length} выполнено
         </span>
       </div>
 
       {allClaimed && (
         <div className="p-3 mb-2 bg-green-900/40 border border-green-500/30 text-center">
           <span className="font-game text-[8px] text-green-300">
-            All chores completed today! Come back tomorrow.
+            Все задания выполнены! Возвращайтесь завтра.
           </span>
         </div>
       )}
@@ -96,12 +96,12 @@ export function ChorePanel() {
                   disabled={!isComplete}
                   onClick={() => claimChore(chore.choreId)}
                 >
-                  {isComplete ? "Claim!" : "In progress..."}
+                  {isComplete ? "Забрать!" : "В процессе..."}
                 </PixelButton>
               )}
               {chore.claimed && (
                 <span className="font-game text-[7px] text-green-400">
-                  Claimed!
+                  Получено!
                 </span>
               )}
             </div>

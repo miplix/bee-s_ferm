@@ -40,3 +40,12 @@ export const MERGE_PENALTY = 0.10;
 
 /** Beehive boost radius (1 cell = 12 neighbors for 2x2 hive, simplified to Manhattan <=1). */
 export const BEEHIVE_RADIUS = 1;
+
+/** Per-level upgrade cost and pollen production. */
+export const BEEHIVE_LEVELS: Record<number, { upgradeCost: number; pollenPerDay: number }> = {
+  1: { upgradeCost: 0,     pollenPerDay: 5  },
+  2: { upgradeCost: 5000,  pollenPerDay: 12 },
+  3: { upgradeCost: 20000, pollenPerDay: 30 },
+};
+
+export const BEEHIVE_MAX_LEVEL = 3;

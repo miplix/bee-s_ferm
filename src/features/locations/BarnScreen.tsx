@@ -40,25 +40,25 @@ function AnimalCard({
         <span className="text-lg">{emoji}</span>
         <div className="flex-1">
           <div className="font-game text-[8px] text-white">
-            Lv.{lvl.level} | XP: {animal.xp}
+            Ур.{lvl.level} | XP: {animal.xp}
           </div>
           <div className="font-game text-[6px] text-white/50">
-            Produces: {lvl.amount} {lvl.product} | Feed: {lvl.feedCost} wheat
+            Даёт: {lvl.amount} {lvl.product} | Корм: {lvl.feedCost} пшеницы
           </div>
         </div>
 
         {!producing && !ready && (
           <PixelButton disabled={!canFeed} onClick={() => feedAnimal(animal.id)}>
-            Feed
+            Кормить
           </PixelButton>
         )}
         {ready && (
           <PixelButton onClick={() => collectAnimal(animal.id)}>
-            Collect
+            Собрать
           </PixelButton>
         )}
         <PixelButton variant="danger" onClick={() => sellAnimal(animal.id)}>
-          Sell
+          Продать
         </PixelButton>
       </div>
 
@@ -72,7 +72,7 @@ function AnimalCard({
       )}
       {ready && (
         <div className="font-game text-[7px] text-green-400 mt-1">
-          Ready to collect!
+          Готово!
         </div>
       )}
     </div>
@@ -113,19 +113,19 @@ export function BarnScreen() {
         <div className="flex items-center gap-2">
           <span className="text-2xl">🐄</span>
           <span className="font-game text-[12px] text-yellow-300">
-            Barn Lv.{barnLevel} ({totalAnimals}/{capacity})
+            Амбар Ур.{barnLevel} ({totalAnimals}/{capacity})
           </span>
         </div>
         <button
           onClick={() => setLocation("farm")}
           className="font-game text-[8px] text-yellow-300 underline"
         >
-          Back to Farm
+          ← На ферму
         </button>
       </div>
 
       <div className="mb-3 font-game text-[7px] text-white/60">
-        Wheat available: {wheat}
+        Пшеница: {wheat}
       </div>
 
       {/* Buy buttons */}
@@ -134,13 +134,13 @@ export function BarnScreen() {
           disabled={totalAnimals >= capacity || coins < 200}
           onClick={() => buyAnimal("cow")}
         >
-          Buy Cow (200c)
+          Купить корову (200м)
         </PixelButton>
         <PixelButton
           disabled={totalAnimals >= capacity || coins < 120}
           onClick={() => buyAnimal("sheep")}
         >
-          Buy Sheep (120c)
+          Купить овцу (120м)
         </PixelButton>
       </div>
 
@@ -151,7 +151,7 @@ export function BarnScreen() {
             disabled={!canUpgrade}
             onClick={() => upgradeBuildingAction("barn")}
           >
-            Upgrade to Lv.{upgrade.toLevel} (
+            Улучшить до Ур.{upgrade.toLevel} (
             {Object.entries(upgrade.cost)
               .map(([r, n]) => `${n} ${r}`)
               .join(", ")}
@@ -163,7 +163,7 @@ export function BarnScreen() {
       {/* Cows section */}
       {cows.length > 0 && (
         <div className="mb-3">
-          <div className="font-game text-[9px] text-yellow-300 mb-1">Cows</div>
+          <div className="font-game text-[9px] text-yellow-300 mb-1">Коровы</div>
           <div className="space-y-2">
             {cows.map((cow) => (
               <AnimalCard
@@ -185,7 +185,7 @@ export function BarnScreen() {
       {/* Sheep section */}
       {sheep.length > 0 && (
         <div className="mb-3">
-          <div className="font-game text-[9px] text-yellow-300 mb-1">Sheep</div>
+          <div className="font-game text-[9px] text-yellow-300 mb-1">Овцы</div>
           <div className="space-y-2">
             {sheep.map((s) => (
               <AnimalCard
@@ -205,7 +205,7 @@ export function BarnScreen() {
       )}
 
       {totalAnimals === 0 && (
-        <p className="font-game text-[8px] text-white/50">No animals yet. Buy a cow or sheep!</p>
+        <p className="font-game text-[8px] text-white/50">Нет животных. Купите корову или овцу!</p>
       )}
     </div>
   );

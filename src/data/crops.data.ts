@@ -1,16 +1,22 @@
-import type { CropId, Season } from "../domain/types/ids";
+import type { CropId, Season, IslandId } from "../domain/types/ids";
+
+/** Island progression order for minIsland checks. */
+export const ISLAND_ORDER: Record<IslandId, number> = {
+  basic: 0, spring: 1, desert: 2, volcano: 3,
+};
 
 export interface CropDef {
   id: CropId;
   name: string;
   emoji: string;
-  sprite: string | null;       // null = emoji fallback
-  level: number;               // Bumpkin level to unlock
-  growMs: number;              // grow time in milliseconds
-  seedPrice: number;           // coins to buy seed
-  sellPrice: number;           // coins per unit sold
-  harvestCount: number;        // base units per harvest
-  seasons: Season[] | "all";   // which seasons (or all)
+  sprite: string | null;
+  level: number;
+  growMs: number;
+  seedPrice: number;
+  sellPrice: number;
+  harvestCount: number;
+  seasons: Season[] | "all";
+  minIsland?: IslandId;   // undefined = available everywhere
 }
 
 /**
@@ -40,7 +46,14 @@ export const CROPS: readonly CropDef[] = Object.freeze([
   { id: "turnip",       name: "Turnip",        emoji: "🥬", sprite: null,                                level: 8,  growMs: 86_400_000,     seedPrice: 5.00,  sellPrice: 8.00,  harvestCount: 1,  seasons: ["winter"] },
   { id: "kale",         name: "Kale",          emoji: "🥗", sprite: "/crops/kale/proc_sprite.png",       level: 9,  growMs: 129_600_000,    seedPrice: 7.00,  sellPrice: 10.00, harvestCount: 1,  seasons: "all" },
   { id: "artichoke",    name: "Artichoke",     emoji: "🌺", sprite: null,                                level: 10, growMs: 129_600_000,    seedPrice: 8.00,  sellPrice: 12.00, harvestCount: 1,  seasons: ["spring", "autumn"] },
-  { id: "barley",       name: "Barley",        emoji: "🌿", sprite: null,                                level: 14, growMs: 172_800_000,    seedPrice: 10.00, sellPrice: 12.00, harvestCount: 1,  seasons: "all" },
+  { id: "barley",       name: "Barley",        emoji: "🌿", sprite: null,  level: 14, growMs: 172_800_000, seedPrice: 10.00, sellPrice: 12.00, harvestCount: 1, seasons: "all" },
+  // --- Desert Island ---
+  { id: "cactus",       name: "Cactus",        emoji: "🌵", sprite: null,  level: 20, growMs:   7_200_000, seedPrice:  3.00, sellPrice:  5.00, harvestCount: 1, seasons: "all", minIsland: "desert" },
+  { id: "dates",        name: "Dates",         emoji: "🌴", sprite: null,  level: 22, growMs:  21_600_000, seedPrice:  6.00, sellPrice: 10.00, harvestCount: 2, seasons: "all", minIsland: "desert" },
+  { id: "agave",        name: "Agave",         emoji: "🪴", sprite: null,  level: 25, growMs:  86_400_000, seedPrice: 10.00, sellPrice: 18.00, harvestCount: 1, seasons: "all", minIsland: "desert" },
+  // --- Volcano Island ---
+  { id: "lava_rose",    name: "Lava Rose",     emoji: "🌹", sprite: null,  level: 32, growMs: 172_800_000, seedPrice: 15.00, sellPrice: 25.00, harvestCount: 1, seasons: "all", minIsland: "volcano" },
+  { id: "dragon_fruit", name: "Dragon Fruit",  emoji: "🐉", sprite: null,  level: 35, growMs: 432_000_000, seedPrice: 20.00, sellPrice: 35.00, harvestCount: 2, seasons: "all", minIsland: "volcano" },
 ]);
 
 /** Lookup crop by ID. */

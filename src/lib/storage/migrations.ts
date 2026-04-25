@@ -5,7 +5,10 @@ import { CURRENT_VERSION } from "./schemaVersion";
 type Migration = (raw: Record<string, unknown>) => Record<string, unknown>;
 
 const migrations: Record<number, Migration> = {
-  // Add migrations as version bumps: { 2: (raw) => { ...transform... } }
+  2: (raw) => ({
+    ...raw,
+    petStates: raw["petStates"] ?? {},
+  }),
 };
 
 export function migrate(raw: unknown): GameState {

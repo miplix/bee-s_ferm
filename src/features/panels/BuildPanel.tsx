@@ -18,7 +18,7 @@ export function BuildPanel() {
   const buildAction = useStore((s) => (s as any).build as (id: string) => void);
 
   return (
-    <PanelShell title="Workbench">
+    <PanelShell title="Верстак">
       {/* Tabs */}
       <div className="flex gap-1 mb-3">
         <button
@@ -26,14 +26,14 @@ export function BuildPanel() {
           className={`font-game text-[8px] px-3 py-1 border border-black/30
             ${tab === "tools" ? "bg-brown-400 text-white" : "bg-brown-600 text-white/60"}`}
         >
-          Tools
+          Инструменты
         </button>
         <button
           onClick={() => setTab("buildings")}
           className={`font-game text-[8px] px-3 py-1 border border-black/30
             ${tab === "buildings" ? "bg-brown-400 text-white" : "bg-brown-600 text-white/60"}`}
         >
-          Buildings
+          Постройки
         </button>
       </div>
 
@@ -52,7 +52,7 @@ export function BuildPanel() {
                   <span className="text-lg">{tool.emoji}</span>
                   <div className="flex-1">
                     <div className="font-game text-[8px] text-white">{tool.name}</div>
-                    <div className="font-game text-[6px] text-white/60">For: {tool.forResource}</div>
+                    <div className="font-game text-[6px] text-white/60">Для: {tool.forResource}</div>
                     <div className="flex flex-wrap gap-x-2 mt-0.5">
                       {Object.entries(tool.cost).map(([res, needed]) => {
                         const have = res === "coins" ? coins : (inventory[res] ?? 0);
@@ -67,7 +67,7 @@ export function BuildPanel() {
                   </div>
                   <span className="font-game text-[8px] text-yellow-300 w-6 text-right">{owned}</span>
                   <PixelButton disabled={!canCraft} onClick={() => craftTool(tool.id, 1)}>
-                    Craft
+                    Сделать
                   </PixelButton>
                 </div>
               </div>
@@ -113,7 +113,7 @@ export function BuildPanel() {
                   </div>
                   {!built && !locked && (
                     <PixelButton disabled={!canAfford} onClick={() => buildAction(b.id)}>
-                      Build
+                      Построить
                     </PixelButton>
                   )}
                 </div>

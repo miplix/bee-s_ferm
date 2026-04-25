@@ -23,14 +23,14 @@ export function DeliveryPanel() {
   }
 
   return (
-    <PanelShell title="Deliveries">
+    <PanelShell title="Доставки">
       {/* Stats */}
       <div className="flex items-center justify-between mb-2 p-2 bg-brown-800 border border-black/30">
         <span className="font-game text-[8px] text-white">
-          Completed: {deliveries.completed}
+          Выполнено: {deliveries.completed}
         </span>
         <span className="font-game text-[7px] text-white/50">
-          {deliveries.active.length} active
+          {deliveries.active.length} активных
         </span>
       </div>
 
@@ -39,7 +39,7 @@ export function DeliveryPanel() {
         {deliveries.active.length === 0 && (
           <div className="p-3 text-center">
             <span className="font-game text-[8px] text-white/50">
-              No deliveries available. Check back later!
+              Нет доступных заданий. Загляните позже!
             </span>
           </div>
         )}
@@ -125,7 +125,7 @@ export function DeliveryPanel() {
                 disabled={!canComplete || isExpired}
                 onClick={() => completeDelivery(delivery.id)}
               >
-                {isExpired ? "Expired" : canComplete ? "Deliver!" : "Need items"}
+                {isExpired ? "Истекло" : canComplete ? "Доставить!" : "Нет товаров"}
               </PixelButton>
             </div>
           );

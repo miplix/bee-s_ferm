@@ -29,11 +29,11 @@ export function SkillsPanel() {
   const tiers = [1, 2, 3] as const;
 
   return (
-    <PanelShell title="Skills">
+    <PanelShell title="Навыки">
       {/* Available points */}
       <div className="mb-3 text-center">
         <span className="font-game text-[9px] text-yellow-300">
-          Skill Points: {available}
+          Очки навыков: {available}
         </span>
       </div>
 
@@ -72,7 +72,7 @@ export function SkillsPanel() {
                 </h4>
                 {!unlocked && (
                   <span className="font-game text-[6px] text-red-400">
-                    Need {needed} more pt{needed > 1 ? "s" : ""} in tree
+                    Нужно ещё {needed} оч. в ветке
                   </span>
                 )}
               </div>
@@ -137,7 +137,7 @@ function SkillRow({
 
         {learned ? (
           <span className="font-game text-[7px] text-green-400 shrink-0 mt-0.5">
-            Learned
+            Изучено
           </span>
         ) : (
           <PixelButton
@@ -146,7 +146,7 @@ function SkillRow({
             onClick={onLearn}
             className="shrink-0 !text-[7px] !px-2 !py-1"
           >
-            Learn
+            Учить
           </PixelButton>
         )}
       </div>

@@ -30,6 +30,7 @@ import * as cropMachineAct from "./actions/cropMachineActions";
 import * as tradingAct from "./actions/tradingActions";
 import * as factionAct from "./actions/factionActions";
 import * as petAct from "./actions/petActions";
+import { toast } from "./toastStore";
 
 export interface StoreActions {
   // UI
@@ -75,12 +76,15 @@ export interface StoreActions {
   startExpansion(): void;
   completeExpansion(): void;
   travelToSpring(): void;
+  travelToDesert(): void;
+  travelToVolcano(): void;
 
   // Beehives
   beehiveAction(hiveId: string): void;
   addDemoBeehive(): void;
   buyBeehive(): void;
   upgradeDemoHive(hiveId: string, useInstant: boolean): void;
+  upgradeBeehive(hiveId: string): void;
   tickPassive(): void;
 
   // Fishing
@@ -138,12 +142,15 @@ export interface StoreActions {
   // Trading
   createListing(itemId: string, qty: number, pricePerUnit: number): void;
   cancelListing(listingId: string): void;
+  buyListing(listingId: string): void;
 
   // Factions
   joinFaction(factionId: string): void;
 
   // Pets
   adoptPet(petId: string): void;
+  napPet(petId: string): void;
+  feedPet(petId: string): void;
 
   // Move
   toggleMoveMode(): void;
@@ -180,14 +187,16 @@ export const useStore = create<Store>()(
       plant: (x, y, cropId) =>
         set((s) => {
           const next = cropAct.plant(s, x, y, cropId, Date.now());
-          return next === s ? s : { ...next, quickbar: pushToQuickbar(next.quickbar, `${cropId}_seed`) };
+          if (next === s) { toast("Нельзя посадить: нет семян или требования не выполнены", "error"); return s; }
+          return { ...next, quickbar: pushToQuickbar(next.quickbar, `${cropId}_seed`) };
         }),
       harvest: (x, y) =>
         set((s) => {
           const key = `${x},${y}`;
           const cropId = s.cells[key]?.cropId;
           const next = cropAct.harvest(s, x, y, Date.now());
-          return next === s ? s : { ...next, quickbar: cropId ? pushToQuickbar(next.quickbar, cropId) : next.quickbar };
+          if (next === s) { toast("Урожай ещё не готов", "error"); return s; }
+          return { ...next, quickbar: cropId ? pushToQuickbar(next.quickbar, cropId) : next.quickbar };
         }),
 
       // --- Shop ---
@@ -227,6 +236,7 @@ export const useStore = create<Store>()(
       gatherNode: (x, y) =>
         set((s) => {
           const next = resAct.gatherNode(s, x, y, Date.now());
+          if (next === s) toast("Нет инструмента или узел на кулдауне", "error");
           return next;
         }),
 
@@ -252,17 +262,29 @@ export const useStore = create<Store>()(
       collectAnimal: (animalId) =>
         set((s) => animalAct.collectAnimal(s, animalId, Date.now())),
       cureAnimal: (animalId) =>
-        set((s) => animalAct.cureAnimal(s, animalId)),
+        set((s) => {
+          const next = animalAct.cureAnimal(s, animalId);
+          if (next === s) toast("Нужны лимон 🍋 и мёд 🍯 для лечения", "error");
+          return next;
+        }),
       sellAnimal: (animalId) =>
         set((s) => animalAct.sellAnimal(s, animalId)),
 
       // --- Expansion ---
       startExpansion: () =>
-        set((s) => expAct.startExpansion(s, Date.now())),
+        set((s) => {
+          const next = expAct.startExpansion(s, Date.now());
+          if (next === s) toast("Недостаточно ресурсов или уровня для расширения", "error");
+          return next;
+        }),
       completeExpansion: () =>
         set((s) => expAct.completeExpansion(s, Date.now())),
       travelToSpring: () =>
         set((s) => expAct.travelToSpring(s, Date.now())),
+      travelToDesert: () =>
+        set((s) => expAct.travelToDesert(s, Date.now())),
+      travelToVolcano: () =>
+        set((s) => expAct.travelToVolcano(s, Date.now())),
 
       // --- Beehives ---
       beehiveAction: (hiveId) =>
@@ -273,6 +295,8 @@ export const useStore = create<Store>()(
         set((s) => hiveAct.buyBeehive(s, Date.now())),
       upgradeDemoHive: (hiveId, useInstant) =>
         set((s) => hiveAct.upgradeDemoHive(s, hiveId, useInstant, Date.now())),
+      upgradeBeehive: (hiveId) =>
+        set((s) => hiveAct.upgradeBeehive(s, hiveId, Date.now())),
       tickPassive: () =>
         set((s) => hiveAct.accruePassivePollen(s, Date.now())),
 
@@ -286,7 +310,11 @@ export const useStore = create<Store>()(
 
       // --- Skills ---
       learnSkill: (skillId) =>
-        set((s) => skillAct.learnSkill(s, skillId)),
+        set((s) => {
+          const next = skillAct.learnSkill(s, skillId);
+          if (next === s) toast("Нет очков навыков или требования не выполнены", "error");
+          return next;
+        }),
 
       // --- Fruits ---
       plantFruit: (x, y, fruitId) =>
@@ -370,6 +398,8 @@ export const useStore = create<Store>()(
         set((s) => tradingAct.createListing(s, itemId, qty, pricePerUnit, Date.now())),
       cancelListing: (listingId) =>
         set((s) => tradingAct.cancelListing(s, listingId)),
+      buyListing: (listingId) =>
+        set((s) => tradingAct.buyListing(s, listingId, Date.now())),
 
       // --- Factions ---
       joinFaction: (factionId) =>
@@ -377,7 +407,15 @@ export const useStore = create<Store>()(
 
       // --- Pets ---
       adoptPet: (petId) =>
-        set((s) => petAct.adoptPet(s, petId)),
+        set((s) => petAct.adoptPet(s, petId, Date.now())),
+      napPet: (petId) =>
+        set((s) => petAct.napPet(s, petId, Date.now())),
+      feedPet: (petId) =>
+        set((s) => {
+          const next = petAct.feedPet(s, petId, Date.now());
+          if (next === s) toast("Нужна пшеница 🌾 для кормления питомца", "error");
+          return next;
+        }),
 
       // --- Move ---
       toggleMoveMode: () =>
@@ -479,7 +517,7 @@ export const useStore = create<Store>()(
           return;
         }
 
-        if (["tree", "rock", "iron", "gold"].includes(cell.type)) {
+        if (["tree", "rock", "iron", "gold", "crimstone", "oil_reserve", "obsidian_rock", "sunstone_rock", "lava_pit"].includes(cell.type)) {
           // Use parent key coords (for 2x2 objects)
           const [pcx, pcy] = key.split(",").map(Number);
           set((prev) => resAct.gatherNode(prev, pcx, pcy, now));
@@ -537,7 +575,7 @@ export const useStore = create<Store>()(
           startCooking, collectMeal, feedBumpkin,
           build: _build, upgradeBuilding: _upgradeBuilding,
           buyAnimal, feedAnimal, collectAnimal, cureAnimal, sellAnimal,
-          beehiveAction, addDemoBeehive, buyBeehive, upgradeDemoHive, tickPassive,
+          beehiveAction, addDemoBeehive, buyBeehive, upgradeDemoHive, upgradeBeehive, tickPassive,
           castLine, buyBait, sellFish,
           learnSkill,
           plantFruit, harvestFruit,
@@ -551,10 +589,10 @@ export const useStore = create<Store>()(
           refreshChores, claimChore,
           claimDailyReward,
           buildCropMachine, addToQueue, collectFromQueue, refillOil,
-          createListing: _createListing, cancelListing: _cancelListing,
-          joinFaction, adoptPet,
+          createListing: _createListing, cancelListing: _cancelListing, buyListing: _buyListing,
+          joinFaction, adoptPet, napPet, feedPet,
           toggleMoveMode, cancelMove,
-          startExpansion, completeExpansion, travelToSpring,
+          startExpansion, completeExpansion, travelToSpring, travelToDesert, travelToVolcano,
           resetGame, touchActivity, ...data } = state;
         return data;
       },

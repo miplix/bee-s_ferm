@@ -23,43 +23,41 @@ export function CropMachinePanel() {
 
   const now = Date.now();
 
-  // Not built yet
   if (!cropMachine || !cropMachine.built) {
     const canBuild = level >= CROP_MACHINE.level && island === "desert";
     return (
-      <PanelShell title="Crop Machine">
+      <PanelShell title="Агромашина">
         <div className="space-y-3">
           <p className="font-game text-[8px] text-white/60">
-            Automated crop growing using oil. Requires Level {CROP_MACHINE.level} and Desert Island.
+            Автоматическое выращивание на масле. Требует уровень {CROP_MACHINE.level} и Пустынный остров.
           </p>
           {level < CROP_MACHINE.level && (
-            <p className="font-game text-[7px] text-red-400">🔒 Requires Level {CROP_MACHINE.level}</p>
+            <p className="font-game text-[7px] text-red-400">🔒 Требует уровень {CROP_MACHINE.level}</p>
           )}
           {island !== "desert" && (
-            <p className="font-game text-[7px] text-red-400">🔒 Requires Desert Island</p>
+            <p className="font-game text-[7px] text-red-400">🔒 Требует Пустынный остров</p>
           )}
           <div className="bg-brown-600 p-2 border border-black/20">
-            <p className="font-game text-[7px] text-yellow-300">Build cost:</p>
+            <p className="font-game text-[7px] text-yellow-300">Стоимость постройки:</p>
             {Object.entries(CROP_MACHINE.buildCost).map(([res, needed]) => (
               <div key={res} className="font-game text-[6px] text-white/70">{needed} {res}</div>
             ))}
           </div>
           <PixelButton disabled={!canBuild} onClick={() => buildCropMachine()}>
-            Build Crop Machine
+            Построить Агромашину
           </PixelButton>
         </div>
       </PanelShell>
     );
   }
 
-  // Built — show queue
   return (
-    <PanelShell title="Crop Machine">
+    <PanelShell title="Агромашина">
       <div className="space-y-3">
         {/* Oil tank */}
         <div className="bg-brown-600 p-2 border border-black/20">
           <div className="font-game text-[8px] text-yellow-300">
-            Oil: {cropMachine.oilTank.toFixed(1)}h / {cropMachine.maxOilTank}h
+            Масло: {cropMachine.oilTank.toFixed(1)}ч / {cropMachine.maxOilTank}ч
           </div>
           <Progress value={cropMachine.oilTank / cropMachine.maxOilTank} color="bg-amber-500" className="mt-1" />
           <div className="mt-1">
@@ -68,7 +66,7 @@ export function CropMachinePanel() {
               disabled={(inventory.oil ?? 0) < 1}
               onClick={() => refillOil(Math.min(10, inventory.oil ?? 0))}
             >
-              Refill (+{Math.min(10, inventory.oil ?? 0)} oil)
+              Долить (+{Math.min(10, inventory.oil ?? 0)} масла)
             </PixelButton>
           </div>
         </div>
@@ -76,7 +74,7 @@ export function CropMachinePanel() {
         {/* Queue */}
         <div>
           <h3 className="font-game text-[8px] text-yellow-300 mb-1">
-            Queue ({cropMachine.queue.length}/{CROP_MACHINE.baseQueueSlots})
+            Очередь ({cropMachine.queue.length}/{CROP_MACHINE.baseQueueSlots})
           </h3>
           {cropMachine.queue.map((item, i) => {
             const ready = isReady(item.startedAt, item.durationMs, now);
@@ -90,7 +88,7 @@ export function CropMachinePanel() {
                   {!ready && <span className="font-game text-[6px] text-yellow-300">{fmtDuration(rem)}</span>}
                 </div>
                 {ready && (
-                  <PixelButton onClick={() => collectFromQueue(i)}>Collect</PixelButton>
+                  <PixelButton onClick={() => collectFromQueue(i)}>Забрать</PixelButton>
                 )}
               </div>
             );
@@ -100,7 +98,7 @@ export function CropMachinePanel() {
         {/* Add to queue */}
         {cropMachine.queue.length < CROP_MACHINE.baseQueueSlots && (
           <div>
-            <h3 className="font-game text-[8px] text-yellow-300 mb-1">Add crops</h3>
+            <h3 className="font-game text-[8px] text-yellow-300 mb-1">Добавить культуры</h3>
             {MACHINE_CROPS.map((cropId) => {
               let crop;
               try { crop = getCropDef(cropId as CropId); } catch { return null; }
@@ -110,7 +108,7 @@ export function CropMachinePanel() {
                 <div key={cropId} className="flex items-center gap-2 bg-brown-600 p-1 border border-black/20 mb-0.5">
                   <span className="text-sm">{crop.emoji}</span>
                   <span className="font-game text-[7px] text-white flex-1">{crop.name}</span>
-                  <span className="font-game text-[6px] text-white/50">{seedCount} seeds</span>
+                  <span className="font-game text-[6px] text-white/50">{seedCount} сем.</span>
                   <PixelButton disabled={seedCount < 1} onClick={() => addToQueue(cropId, 1)} variant="secondary">
                     +1
                   </PixelButton>

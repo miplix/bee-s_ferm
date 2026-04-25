@@ -13,27 +13,26 @@ export function InventoryPanel() {
 
   if (entries.length === 0) {
     return (
-      <PanelShell title="Inventory">
-        <p className="font-game text-[8px] text-white/50">Empty</p>
+      <PanelShell title="Инвентарь">
+        <p className="font-game text-[8px] text-white/50">Пусто</p>
       </PanelShell>
     );
   }
 
-  // Group items
   const seeds = entries.filter(([id]) => id.endsWith("_seed"));
-  const tools = entries.filter(([id]) => ["axe", "stone_pickaxe", "iron_pickaxe", "gold_pickaxe"].includes(id));
+  const tools = entries.filter(([id]) => ["axe", "stone_pickaxe", "iron_pickaxe", "gold_pickaxe", "fishing_rod"].includes(id));
   const meals = entries.filter(([id]) => id.startsWith("meal_"));
   const resources = entries.filter(([id]) =>
     !id.endsWith("_seed") &&
-    !["axe", "stone_pickaxe", "iron_pickaxe", "gold_pickaxe"].includes(id) &&
+    !["axe", "stone_pickaxe", "iron_pickaxe", "gold_pickaxe", "fishing_rod"].includes(id) &&
     !id.startsWith("meal_")
   );
 
   return (
-    <PanelShell title="Inventory">
+    <PanelShell title="Инвентарь">
       <div className="space-y-3">
         {tools.length > 0 && (
-          <Section title="Tools">
+          <Section title="Инструменты">
             {tools.map(([id, qty]) => (
               <ItemRow key={id} id={id} qty={qty}
                 action={
@@ -41,7 +40,7 @@ export function InventoryPanel() {
                     variant={selectedTool === id ? "danger" : "secondary"}
                     onClick={() => selectTool(selectedTool === id ? null : id)}
                   >
-                    {selectedTool === id ? "Drop" : "Use"}
+                    {selectedTool === id ? "Убрать" : "Взять"}
                   </PixelButton>
                 }
               />
@@ -50,7 +49,7 @@ export function InventoryPanel() {
         )}
 
         {seeds.length > 0 && (
-          <Section title="Seeds">
+          <Section title="Семена">
             {seeds.map(([id, qty]) => (
               <ItemRow key={id} id={id} qty={qty}
                 action={
@@ -58,7 +57,7 @@ export function InventoryPanel() {
                     variant={selectedTool === id ? "danger" : "secondary"}
                     onClick={() => selectTool(selectedTool === id ? null : id)}
                   >
-                    {selectedTool === id ? "Drop" : "Use"}
+                    {selectedTool === id ? "Убрать" : "Взять"}
                   </PixelButton>
                 }
               />
@@ -67,7 +66,7 @@ export function InventoryPanel() {
         )}
 
         {resources.length > 0 && (
-          <Section title="Resources">
+          <Section title="Ресурсы">
             {resources.map(([id, qty]) => (
               <ItemRow key={id} id={id} qty={qty} />
             ))}
@@ -75,7 +74,7 @@ export function InventoryPanel() {
         )}
 
         {meals.length > 0 && (
-          <Section title="Meals">
+          <Section title="Блюда">
             {meals.map(([id, qty]) => (
               <ItemRow key={id} id={id} qty={qty} />
             ))}
@@ -110,25 +109,45 @@ function ItemRow({ id, qty, action }: { id: string; qty: number; action?: React.
 
 function itemIcon(id: string): string {
   const icons: Record<string, string> = {
-    axe: "🪓", stone_pickaxe: "⛏️", iron_pickaxe: "⛏️", gold_pickaxe: "⛏️",
-    wood: "🪵", stone: "🪨", iron: "⛓️", gold: "✨",
-    egg: "🥚", milk: "🥛", honey: "🍯",
+    axe: "🪓", stone_pickaxe: "⛏️", iron_pickaxe: "⛏️", gold_pickaxe: "⛏️", fishing_rod: "🎣",
+    wood: "🪵", stone: "🪨", iron: "⛓️", gold: "✨", crimstone: "🔴",
+    oil: "🛢️", obsidian: "⬛", sunstone: "🟡",
+    egg: "🥚", milk: "🥛", honey: "🍯", wool: "🧶",
     sunflower: "🌻", potato: "🥔", pumpkin: "🎃", carrot: "🥕",
     cabbage: "🥬", beetroot: "🫒", cauliflower: "🥦", parsnip: "🌰",
     radish: "🔴", wheat: "🌾", kale: "🥗", corn: "🌽",
+    tomato: "🍅", lemon: "🍋", blueberry: "🫐", orange: "🍊", apple: "🍎", banana: "🍌",
+    sunpetal: "🌻", bloom: "🌸", lily: "🌺",
   };
   if (id.endsWith("_seed")) {
     const crop = id.replace("_seed", "");
     return icons[crop] ?? "🌱";
   }
   if (id.startsWith("meal_")) return "🍽️";
+  if (id.startsWith("mutant_")) return "✨";
   return icons[id] ?? "📦";
 }
 
+const RU_NAMES: Record<string, string> = {
+  wood: "Дерево", stone: "Камень", iron: "Железо", gold: "Золото",
+  crimstone: "Кримстоун", oil: "Нефть", obsidian: "Обсидиан", sunstone: "Сансто́ун",
+  egg: "Яйцо", milk: "Молоко", honey: "Мёд", wool: "Шерсть",
+  axe: "Топор", stone_pickaxe: "Деревянная кирка", iron_pickaxe: "Каменная кирка",
+  gold_pickaxe: "Железная кирка", fishing_rod: "Удочка",
+  sunflower: "Подсолнух", potato: "Картофель", pumpkin: "Тыква", carrot: "Морковь",
+  cabbage: "Капуста", beetroot: "Свёкла", cauliflower: "Цветная капуста",
+  parsnip: "Пастернак", radish: "Редиска", wheat: "Пшеница", kale: "Кейл", corn: "Кукуруза",
+  tomato: "Томат", lemon: "Лимон", blueberry: "Черника", orange: "Апельсин",
+  apple: "Яблоко", banana: "Банан",
+  sunpetal: "Солнечный лепесток", bloom: "Цветение", lily: "Лилия",
+};
+
 function formatItemName(id: string): string {
-  return id
-    .replace("meal_", "")
-    .replace(/_seed$/, " Seed")
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  if (id.endsWith("_seed")) {
+    const crop = id.replace("_seed", "");
+    return (RU_NAMES[crop] ?? crop) + " (семя)";
+  }
+  if (id.startsWith("meal_")) return "Блюдо: " + id.replace("meal_", "").replace(/_/g, " ");
+  if (id.startsWith("mutant_")) return "Мутант: " + id.replace("mutant_", "");
+  return RU_NAMES[id] ?? id.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }

@@ -9,7 +9,7 @@ export function CraftPanel() {
   const craftTool = useStore((s) => s.craftTool);
 
   return (
-    <PanelShell title="Tools">
+    <PanelShell title="Инструменты">
       <div className="space-y-2">
         {TOOLS.map((tool) => {
           const canCraft = Object.entries(tool.cost).every(([res, needed]) => {
@@ -25,7 +25,7 @@ export function CraftPanel() {
                 <div className="flex-1">
                   <div className="font-game text-[8px] text-white">{tool.name}</div>
                   <div className="font-game text-[6px] text-white/60">
-                    For: {tool.forResource}
+                    Для: {tool.forResource}
                   </div>
                   {/* Cost breakdown */}
                   <div className="flex flex-wrap gap-x-2 mt-0.5">
@@ -42,7 +42,7 @@ export function CraftPanel() {
                 </div>
                 <span className="font-game text-[8px] text-yellow-300 w-6 text-right">{owned}</span>
                 <PixelButton disabled={!canCraft} onClick={() => craftTool(tool.id, 1)}>
-                  Craft
+                  Создать
                 </PixelButton>
               </div>
             </div>

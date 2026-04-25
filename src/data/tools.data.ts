@@ -30,8 +30,18 @@ export function getToolDef(id: ToolId): ToolDef {
   return t;
 }
 
+/** Extra node→tool mappings (nodes that share a tool with another node type). */
+const EXTRA_NODE_TOOLS: Record<string, ToolId> = {
+  crimstone:     "gold_pickaxe",
+  oil_reserve:   "gold_pickaxe",
+  obsidian_rock: "gold_pickaxe",
+  sunstone_rock: "gold_pickaxe",
+  lava_pit:      "gold_pickaxe",
+};
+
 /** Which tool is needed for a given node type? */
 export function toolForNode(nodeType: string): ToolId | null {
+  if (EXTRA_NODE_TOOLS[nodeType]) return EXTRA_NODE_TOOLS[nodeType];
   const t = TOOLS.find((t) => t.forResource === nodeType);
   return t?.id ?? null;
 }

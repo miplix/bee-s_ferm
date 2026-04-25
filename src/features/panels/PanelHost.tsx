@@ -15,6 +15,7 @@ import { TradingPanel } from "./TradingPanel";
 import { FactionPanel } from "./FactionPanel";
 import { PetPanel } from "./PetPanel";
 import { CropMachinePanel } from "./CropMachinePanel";
+import { SettingsPanel } from "./SettingsPanel";
 
 export function PanelHost() {
   const activePanel = useStore((s) => s.activePanel);
@@ -38,6 +39,7 @@ export function PanelHost() {
     case "faction":      return <FactionPanel />;      // via Town Hall building
     case "pets":         return <PetPanel />;          // via Pet House building
     case "crop_machine": return <CropMachinePanel />;  // via Crop Machine building
+    case "settings":     return <SettingsPanel />;     // via HUD settings button
     default:             return null;
   }
 }

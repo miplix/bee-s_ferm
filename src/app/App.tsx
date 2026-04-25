@@ -4,6 +4,8 @@ import { FarmView } from "../features/farm/FarmView";
 import { PanelHost } from "../features/panels/PanelHost";
 import { ErrorBoundary } from "../features/shared/ErrorBoundary";
 import { DailyRewardPopup } from "../features/panels/DailyRewardPopup";
+import { WelcomeScreen } from "../features/panels/WelcomeScreen";
+import { Toaster } from "../features/shared/Toaster";
 import { usePassiveTick } from "../hooks/usePassiveTick";
 
 function GameRoot() {
@@ -16,6 +18,8 @@ function GameRoot() {
       <Quickbar />
       <PanelHost />
       <DailyRewardPopup />
+      <WelcomeScreen />
+      <Toaster />
     </div>
   );
 }

@@ -9,6 +9,8 @@ import {
   DEMO_ACTION_INTERVAL_MS,
   DEMO_UPGRADE_ACTIONS,
   BEEHIVE_LV1_COST,
+  BEEHIVE_LEVELS,
+  BEEHIVE_MAX_LEVEL,
 } from "../../data/beehives.data";
 
 export function BeehivePanel() {
@@ -22,37 +24,38 @@ export function BeehivePanel() {
   const addDemoBeehive = useStore((s) => s.addDemoBeehive);
   const buyBeehive = useStore((s) => s.buyBeehive);
   const upgradeDemoHive = useStore((s) => s.upgradeDemoHive);
+  const upgradeBeehive = useStore((s) => s.upgradeBeehive);
 
   const now = Date.now();
 
   if (island === "basic") {
     return (
-      <PanelShell title="Beehives">
+      <PanelShell title="Ульи">
         <p className="font-game text-[8px] text-white/60">
-          Travel to Spring Island first to unlock beehives.
-          Complete all 9 Basic Island expansions, then open the Land panel.
+          Сначала переберитесь на Весенний остров чтобы открыть ульи.
+          Завершите все 9 расширений и откройте панель Земля.
         </p>
       </PanelShell>
     );
   }
 
   return (
-    <PanelShell title="Beehives">
+    <PanelShell title="Ульи">
       <div className="space-y-3">
         {/* Header info */}
         <div className="bg-brown-600 p-2 border border-black/20">
           <div className="font-game text-[8px] text-yellow-300">
-            Slots: {beehives.length}/{maxSlots} | Pollen: {pollen.toFixed(1)}
+            Слоты: {beehives.length}/{maxSlots} | Пыльца: {pollen.toFixed(1)}
           </div>
           <div className="font-game text-[6px] text-white/50">
-            Island: {island} | Level: {level}
+            Остров: {island} | Уровень: {level}
           </div>
         </div>
 
         {/* Add demo beehive */}
         {beehives.length < maxSlots && beehives.filter((h) => h.level === 0).length === 0 && (
           <PixelButton onClick={addDemoBeehive}>
-            Add Demo Beehive (Free)
+            Демо-улей (бесплатно)
           </PixelButton>
         )}
 
@@ -63,7 +66,7 @@ export function BeehivePanel() {
             onClick={buyBeehive}
             variant="secondary"
           >
-            Buy Lv1 Beehive ({BEEHIVE_LV1_COST} pollen)
+            Купить Ур.1 улей ({BEEHIVE_LV1_COST} пыльцы)
           </PixelButton>
         )}
 
@@ -83,12 +86,12 @@ export function BeehivePanel() {
                 <span className="text-lg">{isDemo ? "🐝" : "🍯"}</span>
                 <div className="flex-1">
                   <div className="font-game text-[8px] text-white">
-                    {isDemo ? "Demo Beehive" : `Lv.${hive.level} Beehive`}
+                    {isDemo ? "Демо-улей" : `Ур.${hive.level} Улей`}
                   </div>
                   <div className="font-game text-[6px] text-white/50">
                     {isDemo
-                      ? `Actions: ${hive.actions}/${DEMO_UPGRADE_ACTIONS}`
-                      : `Pollen: ${hive.accruedPollen.toFixed(2)} accrued`}
+                      ? `Действия: ${hive.actions}/${DEMO_UPGRADE_ACTIONS}`
+                      : `Пыльца: ${hive.accruedPollen.toFixed(2)} накоплено`}
                   </div>
                 </div>
 
@@ -98,7 +101,7 @@ export function BeehivePanel() {
                     disabled={!actionReady}
                     onClick={() => beehiveAction(hive.id)}
                   >
-                    {actionReady ? "Action" : fmtDuration(actionRem)}
+                    {actionReady ? "Действие" : fmtDuration(actionRem)}
                   </PixelButton>
                 )}
               </div>
@@ -108,12 +111,12 @@ export function BeehivePanel() {
                 <div>
                   <Progress value={upgradeProg} color="bg-yellow-400" />
                   <div className="font-game text-[6px] text-white/50 mt-0.5">
-                    {(upgradeProg * 100).toFixed(1)}% to Lv1
+                    {(upgradeProg * 100).toFixed(1)}% до Ур.1
                   </div>
                   <div className="flex gap-1 mt-1">
                     {canUpgradeNatural && (
                       <PixelButton onClick={() => upgradeDemoHive(hive.id, false)}>
-                        Upgrade to Lv1
+                        Улучшить до Ур.1
                       </PixelButton>
                     )}
                     {!canUpgradeNatural && (
@@ -122,19 +125,41 @@ export function BeehivePanel() {
                         variant="secondary"
                         onClick={() => upgradeDemoHive(hive.id, true)}
                       >
-                        Instant ({instantCost} pollen)
+                        Мгновенно ({instantCost} пыльцы)
                       </PixelButton>
                     )}
                   </div>
                 </div>
               )}
+
+              {/* Lv1/Lv2 upgrade button */}
+              {!isDemo && hive.level < BEEHIVE_MAX_LEVEL && (() => {
+                const nextLvl = hive.level + 1;
+                const cost = BEEHIVE_LEVELS[nextLvl]?.upgradeCost ?? 0;
+                const nextRate = BEEHIVE_LEVELS[nextLvl]?.pollenPerDay ?? 0;
+                const canUpgrade = pollen >= cost;
+                return (
+                  <div className="flex items-center gap-2 mt-1">
+                    <PixelButton
+                      disabled={!canUpgrade}
+                      variant="secondary"
+                      onClick={() => upgradeBeehive(hive.id)}
+                    >
+                      → Lv{nextLvl} ({cost} pollen)
+                    </PixelButton>
+                    <span className="font-game text-[6px] text-white/40">
+                      {nextRate}/день
+                    </span>
+                  </div>
+                );
+              })()}
             </div>
           );
         })}
 
         {beehives.length === 0 && (
           <p className="font-game text-[8px] text-white/50">
-            No beehives yet. Add a demo beehive to start!
+            Ульев нет. Добавьте демо-улей чтобы начать!
           </p>
         )}
       </div>

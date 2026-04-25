@@ -68,6 +68,15 @@ export interface BeehiveState {
   lastAccrualAt: number;
 }
 
+// --- Pets ---
+
+export interface PetState {
+  id: string;
+  xp: number;
+  lastNap: number;   // ms timestamp
+  adoptedAt: number; // ms timestamp
+}
+
 // --- Shop tracking ---
 
 export interface ShopRecord {
@@ -256,6 +265,7 @@ export interface GameState {
   // factions & pets
   faction: string | null;
   pets: string[];
+  petStates: Record<string, PetState>;
 
   // anti-bot
   lastMeaningfulActivity: number;
@@ -396,6 +406,7 @@ export function createInitialState(): GameState {
 
     faction: null,
     pets: [],
+    petStates: {},
 
     lastMeaningfulActivity: now,
     nearAccount: null,

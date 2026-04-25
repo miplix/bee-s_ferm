@@ -7,6 +7,9 @@ import { skillEffectsToBoosts, aggregateBoosts, applyBoost } from "../../domain/
 import { mulberry32 } from "../../domain/rng/prng";
 import { buildSeed } from "../../domain/rng/seed";
 import { rollAnimalMutant } from "../../domain/mutants/mutants";
+import { log } from "../../lib/log";
+
+const CURE_COST: Record<string, number> = { lemon: 1, honey: 1 };
 
 /** Buy a new animal. */
 export function buyAnimal(
@@ -144,7 +147,7 @@ export function collectAnimal(
   };
 }
 
-/** Cure a diseased animal (costs 1 lemon + 1 honey, simplified from SFL). */
+/** Cure a diseased animal (costs 1 lemon + 1 honey). */
 export function cureAnimal(
   state: GameState,
   animalId: string,
@@ -155,12 +158,24 @@ export function cureAnimal(
   const animal = state.animals[idx];
   if (!animal.diseased) return state;
 
-  // Simplified Barn Delight: 1 lemon + 1 honey (TZ simplified)
-  // For MVP without lemons, just cure for free
+  // Check resources
+  for (const [item, qty] of Object.entries(CURE_COST)) {
+    if ((state.inventory[item] ?? 0) < qty) {
+      log.warn("cureAnimal: missing ingredient", { item, have: state.inventory[item] ?? 0, need: qty });
+      return state;
+    }
+  }
+
+  const inv = { ...state.inventory };
+  for (const [item, qty] of Object.entries(CURE_COST)) {
+    inv[item] = (inv[item] ?? 0) - qty;
+    if (inv[item]! <= 0) delete inv[item];
+  }
+
   const newAnimals = [...state.animals];
   newAnimals[idx] = { ...animal, diseased: false };
 
-  return { ...state, animals: newAnimals };
+  return { ...state, inventory: inv, animals: newAnimals };
 }
 
 /** Sell an animal for coins. */
