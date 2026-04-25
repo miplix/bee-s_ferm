@@ -2,8 +2,10 @@ import { useState, useRef, useCallback } from "react";
 import { useStore } from "../../state/store";
 import { useTick } from "../../hooks/useTick";
 import { getCropDef } from "../../data/crops.data";
+import { FRUITS } from "../../data/fruits.data";
+import { FLOWERS } from "../../data/flowers.data";
 import { RESOURCE_NODES } from "../../data/resourceNodes.data";
-import { EXPANSIONS } from "../../data/expansions.data";
+import { getExpansionList } from "../../data/expansions.data";
 import { progress as calcProgress } from "../../domain/time/time";
 import { isReady, remaining, fmtDuration } from "../../domain/time/time";
 import { Progress } from "../shared/Progress";
@@ -14,7 +16,8 @@ import { BLOCK_SIZE, computeGridBounds, getNextExpansionPos } from "../../domain
 import { getLevel } from "../../domain/level/level";
 import { cellKey } from "../../domain/types/game";
 import type { Cell } from "../../domain/types/game";
-import type { CropId } from "../../domain/types/ids";
+import type { CropId, FruitId, FlowerId } from "../../domain/types/ids";
+import { cropStageSrc, nodeSrc, buildingSrc, beehiveSrc } from "../../lib/assets";
 
 const CELL_SIZE = 52;
 
@@ -26,6 +29,7 @@ export function FarmView() {
   const selectedTool = useStore((s) => s.selectedTool);
   const location = useStore((s) => s.activeLocation);
   const expansion = useStore((s) => s.expansion);
+  const island = useStore((s) => s.island);
   const pendingExpansion = useStore((s) => s.pendingExpansion);
   const xp = useStore((s) => s.xp);
   const inventory = useStore((s) => s.inventory);
@@ -34,6 +38,8 @@ export function FarmView() {
   const completeExpansion = useStore((s) => s.completeExpansion);
   const moveMode = useStore((s) => s.moveMode);
   const moveSource = useStore((s) => s.moveSource);
+  const buildingLevels = useStore((s) => s.buildingLevels);
+  const beehives = useStore((s) => s.beehives);
 
   const [showExpandPopup, setShowExpandPopup] = useState(false);
   const [hoveredParent, setHoveredParent] = useState<string | null>(null);
@@ -91,7 +97,8 @@ export function FarmView() {
     : 0;
 
   // Next expansion info
-  const nextExp = expansion < EXPANSIONS.length ? EXPANSIONS[expansion] : null;
+  const expansionList = getExpansionList(island);
+  const nextExp = expansion < expansionList.length ? expansionList[expansion] : null;
   const levelOk = nextExp ? level >= nextExp.minLevel : false;
   const canAfford = nextExp
     ? Object.entries(nextExp.cost).every(([res, needed]) => {
@@ -202,7 +209,8 @@ export function FarmView() {
               <CellView key={`${gx}-${gy}`} cell={cell} cx={cx} cy={cy}
                 onClick={() => clickCell(cx, cy)} selectedTool={selectedTool}
                 moveMode={moveMode} moveSource={moveSource}
-                hoveredParent={hoveredParent} setHoveredParent={setHoveredParent} />
+                hoveredParent={hoveredParent} setHoveredParent={setHoveredParent}
+                buildingLevels={buildingLevels} beehives={beehives} />
             );
           }),
         )}
@@ -238,12 +246,14 @@ export function FarmView() {
 
             {/* Adds */}
             <div className="mb-3">
-              <p className="font-game text-[8px] text-white/70">Adds:</p>
+              <p className="font-game text-[8px] text-white/70">Добавляет:</p>
               <p className="font-game text-[7px] text-white">
-                +{nextExp.adds.plots} plots, +{nextExp.adds.trees} trees
-                {nextExp.adds.rocks > 0 && `, +${nextExp.adds.rocks} stone`}
-                {nextExp.adds.iron > 0 && `, +${nextExp.adds.iron} iron`}
-                {nextExp.adds.gold > 0 && `, +${nextExp.adds.gold} gold`}
+                +{nextExp.adds.plots} грядок, +{nextExp.adds.trees} деревьев
+                {(nextExp.adds.rocks ?? 0) > 0 && `, +${nextExp.adds.rocks} камень`}
+                {(nextExp.adds.iron ?? 0) > 0 && `, +${nextExp.adds.iron} железо`}
+                {(nextExp.adds.gold ?? 0) > 0 && `, +${nextExp.adds.gold} золото`}
+                {(nextExp.adds.crimstone ?? 0) > 0 && `, +${nextExp.adds.crimstone} 🔴 crimstone`}
+                {(nextExp.adds.flower_beds ?? 0) > 0 && `, +${nextExp.adds.flower_beds} 🌸 цветники`}
               </p>
             </div>
 
@@ -285,9 +295,11 @@ interface CellViewProps {
   moveSource: string | null;
   hoveredParent: string | null;
   setHoveredParent: (key: string | null) => void;
+  buildingLevels: Record<string, number>;
+  beehives: Array<{ level: number }>;
 }
 
-function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, hoveredParent, setHoveredParent }: CellViewProps) {
+function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, hoveredParent, setHoveredParent, buildingLevels, beehives }: CellViewProps) {
   const now = Date.now();
   const key = cellKey(cx, cy);
   const isSource = moveSource === key;
@@ -350,40 +362,30 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
     let icon = "🟫";
     let prog = -1;
     let ready = false;
-    let cropSprite: string | null = null;
+    let cropImg: string | null = null;
 
     if (growing) {
       const crop = getCropDef(cell.cropId as CropId);
       icon = crop.emoji;
-      cropSprite = crop.sprite;
       prog = calcProgress(cell.plantedAt!, crop.growMs, now);
       ready = prog >= 1;
+      cropImg = cropStageSrc(crop.id, prog, ready);
     } else if (selectedTool?.endsWith("_seed")) {
       icon = "➕";
     }
-
-    // Sprite frame: show growth stage based on progress
-    const SPRITE_FRAMES = 11;
-    const SPRITE_SIZE = 36;
-    const frameIdx = growing
-      ? (ready ? SPRITE_FRAMES - 1 : Math.min(SPRITE_FRAMES - 2, Math.floor(prog * (SPRITE_FRAMES - 1))))
-      : 0;
 
     return (
       <div onClick={onClick}
         className={`relative flex flex-col items-center justify-center cursor-pointer
           border border-black/10 ${ready ? "bg-[#6b4226] animate-pulse" : "bg-[#5a3210] hover:bg-[#6b4226]"} ${moveOverlay}`}
         style={{ width: CELL_SIZE, height: CELL_SIZE }}>
-        {cropSprite && growing ? (
-          <div
-            className="w-9 h-9"
-            style={{
-              backgroundImage: `url(${cropSprite})`,
-              backgroundPosition: `-${frameIdx * SPRITE_SIZE}px 0`,
-              backgroundSize: `${SPRITE_FRAMES * SPRITE_SIZE}px ${SPRITE_SIZE}px`,
-              backgroundRepeat: "no-repeat",
-              imageRendering: "pixelated",
-            }}
+        {cropImg && growing ? (
+          <img
+            src={cropImg}
+            alt=""
+            className="w-11 h-11 object-contain pointer-events-none"
+            style={{ imageRendering: "auto" }}
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
           />
         ) : (
           <span className="text-lg">{icon}</span>
@@ -406,8 +408,64 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
     );
   }
 
+  // Fruit patch
+  if (cell.type === "fruit_patch") {
+    const fruitDef = cell.fruitId ? FRUITS.find((f) => f.id === (cell.fruitId as FruitId)) : null;
+    const growing = !!cell.fruitId && !!cell.fruitPlantedAt;
+    const prog = growing && fruitDef ? calcProgress(cell.fruitPlantedAt!, fruitDef.growMs, now) : -1;
+    const ready = prog >= 1;
+    const harvestsLeft = cell.fruitHarvestsLeft ?? 0;
+    return (
+      <div onClick={onClick}
+        className={`relative flex flex-col items-center justify-center cursor-pointer
+          border border-black/10 ${ready ? "bg-[#4a2a60] animate-pulse" : "bg-[#3a1a50] hover:bg-[#4a2a60]"} ${moveOverlay}`}
+        style={{ width: CELL_SIZE, height: CELL_SIZE }}>
+        <span className="text-lg">{fruitDef ? fruitDef.emoji : (selectedTool?.endsWith("_seed") ? "➕" : "🌿")}</span>
+        {growing && !ready && fruitDef && (
+          <>
+            <span className="absolute font-game text-white leading-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]"
+              style={{ bottom: "5px", fontSize: "7px" }}>
+              {fmtDuration(remaining(cell.fruitPlantedAt!, fruitDef.growMs, now))}
+            </span>
+            <Progress value={prog} className="absolute bottom-0 left-0 right-0 h-1" />
+          </>
+        )}
+        {ready && <span className="absolute top-0 right-0 text-[8px] font-game text-green-300">!</span>}
+        {harvestsLeft > 0 && (
+          <span className="absolute bottom-0 left-0 font-game text-[6px] text-yellow-300 ml-0.5 mb-0.5">{harvestsLeft}x</span>
+        )}
+      </div>
+    );
+  }
+
+  // Flower bed
+  if (cell.type === "flower_bed") {
+    const flowerDef = cell.flowerId ? FLOWERS.find((f) => f.id === (cell.flowerId as FlowerId)) : null;
+    const growing = !!cell.flowerId && !!cell.flowerPlantedAt;
+    const prog = growing && flowerDef ? calcProgress(cell.flowerPlantedAt!, flowerDef.growMs, now) : -1;
+    const ready = prog >= 1;
+    return (
+      <div onClick={onClick}
+        className={`relative flex flex-col items-center justify-center cursor-pointer
+          border border-black/10 ${ready ? "bg-[#5a1a4a] animate-pulse" : "bg-[#3a1a35] hover:bg-[#5a1a4a]"} ${moveOverlay}`}
+        style={{ width: CELL_SIZE, height: CELL_SIZE }}>
+        <span className="text-lg">{flowerDef ? flowerDef.emoji : (selectedTool?.endsWith("_seed") ? "➕" : "🌱")}</span>
+        {growing && !ready && flowerDef && (
+          <>
+            <span className="absolute font-game text-white leading-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]"
+              style={{ bottom: "5px", fontSize: "7px" }}>
+              {fmtDuration(remaining(cell.flowerPlantedAt!, flowerDef.growMs, now))}
+            </span>
+            <Progress value={prog} className="absolute bottom-0 left-0 right-0 h-1" />
+          </>
+        )}
+        {ready && <span className="absolute top-0 right-0 text-[8px] font-game text-green-300">!</span>}
+      </div>
+    );
+  }
+
   // Resource node
-  if (["tree", "rock", "iron", "gold"].includes(cell.type)) {
+  if (["tree", "rock", "iron", "gold", "crimstone", "oil_reserve", "obsidian_rock", "sunstone_rock", "lava_pit"].includes(cell.type)) {
     const nodeDef = RESOURCE_NODES[cell.type];
     const onCooldown = !isReady(cell.lastHarvest ?? 0, nodeDef.cooldownMs, now);
     const exhausted = nodeDef.maxNodes >= 0 && (cell.hitsLeft ?? 0) <= 0;
@@ -420,9 +478,10 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
 
     const is2x2Node = (cell.w ?? 1) >= 2;
     const sz = is2x2Node ? 2 : 1;
-    // Tree on cooldown shows stump, otherwise full tree
     const isTree = cell.type === "tree";
-    const icon = isTree && onCooldown ? "🪵" : nodeDef.emoji;
+    const showEmpty = exhausted || (isTree && onCooldown);
+    const imgSrc = nodeSrc(cell.type, showEmpty);
+    const fallbackIcon = isTree && onCooldown ? "🪵" : nodeDef.emoji;
     const iconSize = is2x2Node ? (onCooldown ? "32px" : "48px") : "20px";
 
     return (
@@ -437,11 +496,21 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
           filter: isHovered ? "brightness(1.25)" : undefined,
         }}>
         {/* Icon spanning 2x2 */}
-        <span
-          className={`absolute flex items-center justify-center pointer-events-none ${exhausted ? "grayscale" : ""}`}
-          style={{ top: 0, left: 0, width: CELL_SIZE * sz, height: CELL_SIZE * sz, fontSize: iconSize }}>
-          {icon}
-        </span>
+        {imgSrc ? (
+          <img
+            src={imgSrc}
+            alt=""
+            className={`absolute object-contain pointer-events-none ${exhausted ? "grayscale" : ""}`}
+            style={{ top: 0, left: 0, width: CELL_SIZE * sz, height: CELL_SIZE * sz }}
+            onError={(e) => { (e.currentTarget as HTMLImageElement).outerHTML = `<span class="absolute flex items-center justify-center pointer-events-none" style="top:0;left:0;width:${CELL_SIZE * sz}px;height:${CELL_SIZE * sz}px;font-size:${iconSize}">${fallbackIcon}</span>`; }}
+          />
+        ) : (
+          <span
+            className={`absolute flex items-center justify-center pointer-events-none ${exhausted ? "grayscale" : ""}`}
+            style={{ top: 0, left: 0, width: CELL_SIZE * sz, height: CELL_SIZE * sz, fontSize: iconSize }}>
+            {fallbackIcon}
+          </span>
+        )}
 
         {/* Cooldown timer — centered on 2x2 */}
         {onCooldown && !exhausted && (
@@ -474,10 +543,67 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
   // Building
   if (cell.type === "building") {
     const is2x2 = (cell.w ?? 1) >= 2;
+    const bId = cell.buildingId ?? "";
+    const bLevel = buildingLevels[bId] ?? 1;
+    const buildingImg = buildingSrc(bId, bLevel);
+    const wPx = is2x2 ? CELL_SIZE * 2 : CELL_SIZE;
     return (
       <div onClick={onClick}
         {...hoverHandlers}
         className={`relative flex items-center justify-center bg-brown-600 border border-black/5 cursor-pointer ${moveOverlay}`}
+        style={{
+          width: CELL_SIZE, height: CELL_SIZE,
+          overflow: is2x2 ? "visible" : "hidden",
+          zIndex: is2x2 ? 10 : 1,
+          filter: isHovered ? "brightness(1.25)" : undefined,
+        }}>
+        {buildingImg ? (
+          <img
+            src={buildingImg}
+            alt=""
+            className="absolute object-contain pointer-events-none"
+            style={{ top: 0, left: 0, width: wPx, height: wPx }}
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+          />
+        ) : (
+          <span
+            className="absolute flex items-center justify-center pointer-events-none"
+            style={{ top: 0, left: 0, width: wPx, height: wPx, fontSize: is2x2 ? "40px" : "20px" }}>
+            {buildingEmoji(cell.buildingId)}
+          </span>
+        )}
+      </div>
+    );
+  }
+
+  // Beehive
+  if (cell.type === "beehive") {
+    const bee = cell.beehiveIdx != null ? beehives[cell.beehiveIdx] : null;
+    const lvl = bee?.level ?? 1;
+    const hiveImg = beehiveSrc(lvl);
+    return (
+      <div onClick={onClick}
+        className={`flex items-center justify-center bg-yellow-700 border border-black/20 cursor-pointer hover:bg-yellow-600 ${moveOverlay}`}
+        style={{ width: CELL_SIZE, height: CELL_SIZE }}>
+        <img
+          src={hiveImg}
+          alt=""
+          className="w-11 h-11 object-contain pointer-events-none"
+          onError={(e) => { (e.currentTarget as HTMLImageElement).outerHTML = '<span class="text-lg">🐝</span>'; }}
+        />
+      </div>
+    );
+  }
+
+  // Greenhouse (2x2)
+  if (cell.type === "greenhouse") {
+    const is2x2 = (cell.w ?? 1) >= 2;
+    const hasPlant = !!cell.greenhouseCropId;
+    const ready = hasPlant && cell.greenhousePlantedAt != null; // simplified — actual ready check in action
+    return (
+      <div onClick={onClick}
+        {...hoverHandlers}
+        className={`relative flex items-center justify-center bg-[#1a4a30] border border-black/10 cursor-pointer hover:bg-[#255a3a] ${moveOverlay}`}
         style={{
           width: CELL_SIZE, height: CELL_SIZE,
           overflow: is2x2 ? "visible" : "hidden",
@@ -490,21 +616,10 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
             top: 0, left: 0,
             width: is2x2 ? CELL_SIZE * 2 : CELL_SIZE,
             height: is2x2 ? CELL_SIZE * 2 : CELL_SIZE,
-            fontSize: is2x2 ? "40px" : "20px",
+            fontSize: is2x2 ? "36px" : "18px",
           }}>
-          {buildingEmoji(cell.buildingId)}
+          {hasPlant ? (ready ? "✅" : "🌱") : "🏡"}
         </span>
-      </div>
-    );
-  }
-
-  // Beehive
-  if (cell.type === "beehive") {
-    return (
-      <div onClick={onClick}
-        className={`flex items-center justify-center bg-yellow-700 border border-black/20 cursor-pointer hover:bg-yellow-600 ${moveOverlay}`}
-        style={{ width: CELL_SIZE, height: CELL_SIZE }}>
-        <span className="text-lg">🐝</span>
       </div>
     );
   }
