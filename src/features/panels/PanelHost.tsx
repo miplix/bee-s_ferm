@@ -16,6 +16,7 @@ import { FactionPanel } from "./FactionPanel";
 import { PetPanel } from "./PetPanel";
 import { CropMachinePanel } from "./CropMachinePanel";
 import { SettingsPanel } from "./SettingsPanel";
+import { DevPanel } from "./DevPanel";
 
 export function PanelHost() {
   const activePanel = useStore((s) => s.activePanel);
@@ -40,6 +41,7 @@ export function PanelHost() {
     case "pets":         return <PetPanel />;          // via Pet House building
     case "crop_machine": return <CropMachinePanel />;  // via Crop Machine building
     case "settings":     return <SettingsPanel />;     // via HUD settings button
+    case "dev":          return <DevPanel />;          // via D key (dev cheats)
     default:             return null;
   }
 }

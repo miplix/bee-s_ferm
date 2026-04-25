@@ -18,14 +18,27 @@ import { cellKey } from "../../domain/types/game";
 import type { Cell } from "../../domain/types/game";
 import type { CropId, FruitId, FlowerId } from "../../domain/types/ids";
 import { cropStageSrc, nodeSrc, buildingSrc, beehiveSrc } from "../../lib/assets";
+import { getCurrentSeason } from "../../domain/seasons/seasons";
 
 const CELL_SIZE = 52;
 
-const GRASS_STYLE: React.CSSProperties = {
-  backgroundImage: `url(/tiles/grass_basic.png)`,
-  backgroundSize: `${CELL_SIZE}px ${CELL_SIZE}px`,
-  backgroundRepeat: "repeat",
-};
+function getTilePath(island: string, season: string): string {
+  if (island === "desert") return "/tiles/sand_desert.png";
+  if (island === "volcano") return "/tiles/rock_volcano.png";
+  // basic/spring → seasonal grass
+  if (season === "summer") return "/tiles/grass_summer.png";
+  if (season === "autumn") return "/tiles/grass_autumn.png";
+  if (season === "winter") return "/tiles/grass_winter.png";
+  return "/tiles/grass_spring.png"; // default = spring
+}
+
+function makeGrassStyle(island: string, season: string): React.CSSProperties {
+  return {
+    backgroundImage: `url(${getTilePath(island, season)})`,
+    backgroundSize: `${CELL_SIZE}px ${CELL_SIZE}px`,
+    backgroundRepeat: "repeat",
+  };
+}
 
 export function FarmView() {
   useTick(1000);
@@ -46,6 +59,9 @@ export function FarmView() {
   const moveSource = useStore((s) => s.moveSource);
   const buildingLevels = useStore((s) => s.buildingLevels);
   const beehives = useStore((s) => s.beehives);
+  const seasonAnchor = useStore((s) => s.seasonAnchor);
+  const currentSeason = island === "basic" ? "spring" : getCurrentSeason(Date.now(), seasonAnchor);
+  const grassStyle = makeGrassStyle(island, currentSeason);
 
   const [showExpandPopup, setShowExpandPopup] = useState(false);
   const [hoveredParent, setHoveredParent] = useState<string | null>(null);
@@ -113,18 +129,34 @@ export function FarmView() {
       })
     : false;
 
+  // Surrounding background by island (water+clouds for basic, sand for desert, lava for volcano)
+  const islandBg: Record<string, string> = {
+    basic:   "linear-gradient(180deg, #6dc3e0 0%, #4ea7d4 60%, #3a8bbf 100%)",
+    spring:  "linear-gradient(180deg, #b6e0c2 0%, #88c89e 60%, #5fa57b 100%)",
+    desert:  "linear-gradient(180deg, #f5d699 0%, #e6b063 60%, #c08338 100%)",
+    volcano: "linear-gradient(180deg, #4a2520 0%, #2a1010 60%, #1a0808 100%)",
+  };
+
   return (
     <div
       className="flex-1 overflow-hidden relative cursor-grab active:cursor-grabbing"
-      style={{
-        background: "radial-gradient(ellipse at center, #7ec8e3 0%, #b8d4e8 40%, #e8eff5 70%, #f0f4f8 100%)",
-      }}
+      style={{ background: islandBg[island] ?? islandBg.basic }}
       onWheel={handleWheel}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
     >
+      {/* Floating clouds for basic island only */}
+      {island === "basic" && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
+          <div className="absolute top-[6%] left-[8%] text-7xl opacity-80 animate-[float_12s_ease-in-out_infinite]">☁️</div>
+          <div className="absolute top-[18%] right-[6%] text-6xl opacity-70 animate-[float_15s_ease-in-out_infinite] [animation-delay:1s]">☁️</div>
+          <div className="absolute bottom-[12%] left-[12%] text-5xl opacity-75 animate-[float_18s_ease-in-out_infinite] [animation-delay:3s]">☁️</div>
+          <div className="absolute bottom-[6%] right-[14%] text-7xl opacity-65 animate-[float_14s_ease-in-out_infinite] [animation-delay:5s]">☁️</div>
+        </div>
+      )}
+
       {/* Zoom/pan container */}
       <div
         className="relative"
@@ -212,7 +244,7 @@ export function FarmView() {
 
             // Normal cell — wrap in grass background (only inside expanded blocks)
             return (
-              <div key={`${gx}-${gy}`} style={GRASS_STYLE}>
+              <div key={`${gx}-${gy}`} style={grassStyle}>
                 <CellView cell={cell} cx={cx} cy={cy}
                   onClick={() => clickCell(cx, cy)} selectedTool={selectedTool}
                   moveMode={moveMode} moveSource={moveSource}

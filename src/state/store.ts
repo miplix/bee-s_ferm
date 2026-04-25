@@ -624,3 +624,8 @@ export const useStore = create<Store>()(
     },
   ),
 );
+
+// Expose store for dev/testing access via console or e2e
+if (typeof window !== "undefined") {
+  (window as any).__store = useStore;
+}
