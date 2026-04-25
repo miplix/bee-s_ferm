@@ -22,10 +22,9 @@ import { cropStageSrc, nodeSrc, buildingSrc, beehiveSrc } from "../../lib/assets
 const CELL_SIZE = 52;
 
 const GRASS_STYLE: React.CSSProperties = {
-  backgroundImage: `linear-gradient(rgba(0,0,0,0.10), rgba(0,0,0,0.10)), url(/tiles/grass_basic.png)`,
-  backgroundSize: `auto, ${CELL_SIZE}px ${CELL_SIZE}px`,
+  backgroundImage: `url(/tiles/grass_basic.png)`,
+  backgroundSize: `${CELL_SIZE}px ${CELL_SIZE}px`,
   backgroundRepeat: "repeat",
-  filter: "saturate(0.65) brightness(0.95)",
 };
 
 export function FarmView() {
@@ -508,7 +507,7 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
           <img
             src={imgSrc}
             alt=""
-            className={`absolute object-contain pointer-events-none ${exhausted ? "grayscale" : ""}`}
+            className={`absolute object-contain pointer-events-none max-w-none ${exhausted ? "grayscale" : ""}`}
             style={{ top: 0, left: 0, width: CELL_SIZE * sz, height: CELL_SIZE * sz }}
             onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
           />
@@ -569,7 +568,7 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
           <img
             src={buildingImg}
             alt=""
-            className="absolute object-contain pointer-events-none"
+            className="absolute object-contain pointer-events-none max-w-none"
             style={{ top: 0, left: 0, width: wPx, height: wPx }}
             onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
           />
