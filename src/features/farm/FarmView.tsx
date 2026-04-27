@@ -462,22 +462,31 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
     );
   }
 
-  // Fruit patch
+  // Fruit patch — 2x2 (fruit trees grow here)
   if (cell.type === "fruit_patch") {
     const fruitDef = cell.fruitId ? FRUITS.find((f) => f.id === (cell.fruitId as FruitId)) : null;
     const growing = !!cell.fruitId && !!cell.fruitPlantedAt;
     const prog = growing && fruitDef ? calcProgress(cell.fruitPlantedAt!, fruitDef.growMs, now) : -1;
     const ready = prog >= 1;
     const harvestsLeft = cell.fruitHarvestsLeft ?? 0;
+    const is2x2 = (cell.w ?? 1) >= 2;
+    const sz = is2x2 ? 2 : 1;
     return (
       <div onClick={onClick}
+        {...hoverHandlers}
         className={`relative flex flex-col items-center justify-center cursor-pointer ${ready ? "animate-pulse" : ""} ${moveOverlay}`}
-        style={{ width: CELL_SIZE, height: CELL_SIZE }}>
+        style={{
+          width: CELL_SIZE, height: CELL_SIZE,
+          overflow: is2x2 ? "visible" : "hidden",
+          zIndex: is2x2 ? 10 : 1,
+        }}>
         {!growing && (
-          <img src="/plot/plot_empty.png" alt="" className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+          <img src="/plot/fruit_patch_empty.png" alt=""
+               className="absolute object-contain pointer-events-none max-w-none"
+               style={{ top: 0, left: 0, width: CELL_SIZE * sz, height: CELL_SIZE * sz }}
                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
         )}
-        <span className="relative text-lg">{fruitDef ? fruitDef.emoji : (selectedTool?.endsWith("_seed") ? "➕" : "")}</span>
+        <span className="relative text-2xl">{fruitDef ? fruitDef.emoji : (selectedTool?.endsWith("_seed") ? "➕" : "")}</span>
         {growing && !ready && fruitDef && (
           <>
             <span className="absolute font-game text-white leading-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]"
@@ -495,7 +504,7 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
     );
   }
 
-  // Flower bed
+  // Flower bed (1x1, distinct sprite — wooden box with soil for flowers)
   if (cell.type === "flower_bed") {
     const flowerDef = cell.flowerId ? FLOWERS.find((f) => f.id === (cell.flowerId as FlowerId)) : null;
     const growing = !!cell.flowerId && !!cell.flowerPlantedAt;
@@ -506,7 +515,7 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
         className={`relative flex flex-col items-center justify-center cursor-pointer ${ready ? "animate-pulse" : ""} ${moveOverlay}`}
         style={{ width: CELL_SIZE, height: CELL_SIZE }}>
         {!growing && (
-          <img src="/plot/plot_empty.png" alt="" className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+          <img src="/plot/flower_bed_empty.png" alt="" className="absolute inset-0 w-full h-full object-contain pointer-events-none"
                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
         )}
         <span className="relative text-lg">{flowerDef ? flowerDef.emoji : (selectedTool?.endsWith("_seed") ? "➕" : "")}</span>
