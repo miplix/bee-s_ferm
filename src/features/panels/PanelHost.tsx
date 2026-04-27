@@ -13,7 +13,7 @@ import { DeliveryPanel } from "./DeliveryPanel";
 import { ChorePanel } from "./ChorePanel";
 import { TradingPanel } from "./TradingPanel";
 import { FactionPanel } from "./FactionPanel";
-import { PetPanel } from "./PetPanel";
+// Pets system removed — not part of original SFL design
 import { CropMachinePanel } from "./CropMachinePanel";
 import { SettingsPanel } from "./SettingsPanel";
 import { DevPanel } from "./DevPanel";
@@ -38,7 +38,7 @@ export function PanelHost() {
     case "chores":       return <ChorePanel />;        // via Bulletin Board building
     case "trading":      return <TradingPanel />;      // via Trading Post building
     case "faction":      return <FactionPanel />;      // via Town Hall building
-    case "pets":         return <PetPanel />;          // via Pet House building
+    case "pets":         return null;                  // pets removed
     case "crop_machine": return <CropMachinePanel />;  // via Crop Machine building
     case "settings":     return <SettingsPanel />;     // via HUD settings button
     case "dev":          return <DevPanel />;          // via D key (dev cheats)

@@ -137,7 +137,7 @@ export interface StoreActions {
   claimChore(choreId: string): void;
 
   // Daily Reward
-  claimDailyReward(optionIndex?: number): void;
+  claimDailyReward(): void;
 
   // Crop Machine
   buildCropMachine(): void;
@@ -455,8 +455,8 @@ export const useStore = create<Store>()(
         set((s) => choreAct.claimChore(s, choreId, Date.now())),
 
       // --- Daily Reward ---
-      claimDailyReward: (optionIndex = 0) =>
-        set((s) => dailyRewardAct.claimDailyReward(s, Date.now(), optionIndex)),
+      claimDailyReward: () =>
+        set((s) => dailyRewardAct.claimDailyReward(s, Date.now())),
 
       // --- Crop Machine ---
       buildCropMachine: () =>

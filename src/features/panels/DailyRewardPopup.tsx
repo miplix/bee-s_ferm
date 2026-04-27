@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { useStore } from "../../state/store";
+import { PixelButton } from "../shared/PixelButton";
 import {
   canClaimDailyReward,
   getCurrentStreakDay,
-  getDailyMenu,
+  previewTodayReward,
 } from "../../state/actions/dailyRewardActions";
 
 export function DailyRewardPopup() {
@@ -11,13 +12,14 @@ export function DailyRewardPopup() {
   const [claimed, setClaimed] = useState(false);
 
   const dailyReward = useStore((s) => s.dailyReward);
+  const seed = useStore((s) => s.seed);
   const claimDailyReward = useStore((s) => s.claimDailyReward);
 
   const now = Date.now();
-  const fakeState = { dailyReward } as any;
+  const fakeState = { dailyReward, seed } as any;
   const canClaim = canClaimDailyReward(fakeState, now);
   const streakDay = getCurrentStreakDay(fakeState, now);
-  const opts = getDailyMenu(fakeState, now);
+  const today = previewTodayReward(fakeState, now);
 
   useEffect(() => {
     if (canClaim && !claimed) {
@@ -28,8 +30,8 @@ export function DailyRewardPopup() {
 
   if (!visible) return null;
 
-  const handleClaim = (idx: number) => {
-    claimDailyReward(idx);
+  const handleClaim = () => {
+    claimDailyReward();
     setClaimed(true);
     setTimeout(() => setVisible(false), 1500);
   };
@@ -40,7 +42,7 @@ export function DailyRewardPopup() {
       onClick={() => setVisible(false)}
     >
       <div
-        className="bg-brown-700 border-2 border-black p-4 w-[320px] max-h-[88vh] overflow-y-auto shadow-lg"
+        className="bg-brown-700 border-2 border-black p-4 w-[300px] shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="text-center mb-3">
@@ -48,26 +50,25 @@ export function DailyRewardPopup() {
             Ежедневный бонус!
           </div>
           <div className="font-game text-[8px] text-white/60">
-            День {streakDay} подряд · выбери один
+            День {streakDay} подряд
           </div>
-          {streakDay < 7 && (
-            <div className="font-game text-[7px] text-white/40 mt-1">
-              Инструменты откроются с 7-го дня
-            </div>
-          )}
+        </div>
+
+        <div className="p-3 bg-brown-800 border border-black/30 mb-3 text-center">
+          <div className="font-game text-[7px] text-white/40 mb-1">Сегодня выпало:</div>
+          <div className="font-game text-[11px] text-yellow-300">
+            +{today.option.label}
+          </div>
+        </div>
+
+        <div className="font-game text-[6px] text-white/50 mb-3 text-center">
+          Награда выбирается рандомно. Пропустишь день — стрик сбросится.
+          {streakDay < 7 && <><br/>Инструменты с 7-го дня</>}
         </div>
 
         {!claimed ? (
-          <div className="grid gap-1">
-            {opts.map((o, i) => (
-              <button
-                key={i}
-                onClick={() => handleClaim(i)}
-                className="font-game text-[8px] px-3 py-2 border-2 border-black bg-brown-600 text-yellow-200 hover:bg-brown-500 active:bg-brown-700 text-left"
-              >
-                +{o.label}
-              </button>
-            ))}
+          <div className="text-center">
+            <PixelButton onClick={handleClaim}>Забрать!</PixelButton>
           </div>
         ) : (
           <div className="text-center">

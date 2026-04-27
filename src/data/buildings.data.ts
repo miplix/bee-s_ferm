@@ -24,7 +24,6 @@ export const BUILDINGS: readonly BuildingDef[] = [
   { id: "bulletin_board", name: "Bulletin Board", emoji: "📋", level: 5,  cost: { wood: 10, stone: 5 },                    desc: "Deliveries and daily chores" },
   { id: "trading_post",   name: "Trading Post",   emoji: "⚖️", level: 10, cost: { wood: 20, stone: 10, iron: 5 },          desc: "Trade with other players" },
   { id: "fishing_dock",   name: "Fishing Dock",   emoji: "🎣", level: 7,  cost: { wood: 15, stone: 5 },                    desc: "Go fishing" },
-  { id: "pet_house",      name: "Pet House",      emoji: "🐾", level: 15, cost: { wood: 30, stone: 20, iron: 10, gold: 3 }, desc: "Adopt and manage pets" },
   { id: "town_hall",      name: "Town Hall",      emoji: "🏛️", level: 1,  cost: {},                                        desc: "Faction selection and community" },
 ] satisfies BuildingDef[];
 

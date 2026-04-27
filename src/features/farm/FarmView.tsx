@@ -142,28 +142,44 @@ export function FarmView() {
     volcano: "linear-gradient(180deg, #4a2520 0%, #2a1010 60%, #1a0808 100%)",
   };
   const bgImg = islandBgImage[island];
-  const bgStyle: React.CSSProperties = bgImg
-    ? {
-        backgroundColor: islandBgGradient[island]?.match(/#[0-9a-f]+/i)?.[0] ?? "#444",
-        backgroundImage: `url(${bgImg})`,
-        backgroundSize: "256px 256px",
-        backgroundRepeat: "repeat",
-      }
-    : { background: islandBgGradient[island] ?? islandBgGradient.basic };
 
   return (
     <div
       className="flex-1 overflow-hidden relative cursor-grab active:cursor-grabbing"
-      style={bgStyle}
+      style={{ background: islandBgGradient[island] ?? islandBgGradient.basic }}
       onWheel={handleWheel}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
     >
-      {/* Floating clouds for basic island only */}
+      {/* Background ocean/desert/lava — zooms WITH island, like real surroundings */}
+      {bgImg && (
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            top: "50%", left: "50%",
+            width: "300%", height: "300%",
+            transform: `translate(-50%, -50%) translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+            transformOrigin: "center center",
+            backgroundImage: `url(${bgImg})`,
+            backgroundSize: "256px 256px",
+            backgroundRepeat: "repeat",
+            zIndex: 0,
+          }}
+        />
+      )}
+
+      {/* Floating clouds for basic island — also zoom/pan with island */}
       {island === "basic" && (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
+        <div
+          className="absolute inset-0 pointer-events-none overflow-hidden"
+          style={{
+            transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+            transformOrigin: "center center",
+            zIndex: 1,
+          }}
+        >
           <div className="absolute top-[6%] left-[8%] text-7xl opacity-80 animate-[float_12s_ease-in-out_infinite]">☁️</div>
           <div className="absolute top-[18%] right-[6%] text-6xl opacity-70 animate-[float_15s_ease-in-out_infinite] [animation-delay:1s]">☁️</div>
           <div className="absolute bottom-[12%] left-[12%] text-5xl opacity-75 animate-[float_18s_ease-in-out_infinite] [animation-delay:3s]">☁️</div>
