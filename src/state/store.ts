@@ -428,9 +428,21 @@ export const useStore = create<Store>()(
 
       // --- Crop Machine ---
       buildCropMachine: () =>
-        set((s) => cropMachineAct.buildCropMachine(s, Date.now())),
+        set((s) => {
+          const next = cropMachineAct.buildCropMachine(s, Date.now());
+          if (next === s) {
+            if (s.cropMachine) toast("Crop Machine уже построен", "error");
+            else toast("Нужен Lv 35, остров Desert и ресурсы (8000c, 1250 wood, 125 iron, 50 crimstone)", "error");
+            return s;
+          }
+          return next;
+        }),
       addToQueue: (cropId, qty) =>
-        set((s) => cropMachineAct.addToQueue(s, cropId, qty, Date.now())),
+        set((s) => {
+          const next = cropMachineAct.addToQueue(s, cropId, qty, Date.now());
+          if (next === s) { toast("Не получилось добавить в очередь (нет машины/семян/масла или очередь полна)", "error"); return s; }
+          return next;
+        }),
       collectFromQueue: (index) =>
         set((s) => cropMachineAct.collectFromQueue(s, index, Date.now())),
       refillOil: (qty) =>
@@ -438,11 +450,21 @@ export const useStore = create<Store>()(
 
       // --- Trading ---
       createListing: (itemId, qty, pricePerUnit) =>
-        set((s) => tradingAct.createListing(s, itemId, qty, pricePerUnit, Date.now())),
+        set((s) => {
+          const next = tradingAct.createListing(s, itemId, qty, pricePerUnit, Date.now());
+          if (next === s) { toast("Нельзя выставить лот: нет товара или некорректные параметры", "error"); return s; }
+          return next;
+        }),
       cancelListing: (listingId) =>
         set((s) => tradingAct.cancelListing(s, listingId)),
       buyListing: (listingId) =>
-        set((s) => tradingAct.buyListing(s, listingId, Date.now())),
+        set((s) => {
+          const lst = s.tradeListings.find((l) => l.id === listingId);
+          if (lst && lst.sellerId === s.seed) { toast("Это твой собственный лот", "error"); return s; }
+          const next = tradingAct.buyListing(s, listingId, Date.now());
+          if (next === s) { toast("Не хватает монет или лот недоступен", "error"); return s; }
+          return next;
+        }),
 
       // --- Factions ---
       joinFaction: (factionId) =>
@@ -470,7 +492,16 @@ export const useStore = create<Store>()(
         }),
 
       adoptPet: (petId) =>
-        set((s) => petAct.adoptPet(s, petId, Date.now())),
+        set((s) => {
+          const next = petAct.adoptPet(s, petId, Date.now());
+          if (next === s) {
+            if (!s.buildings.includes("pet_house" as any)) toast("Сначала построй Дом Питомцев", "error");
+            else if (s.pets.includes(petId)) toast("Этот питомец уже усыновлён", "error");
+            else toast("Не получилось усыновить", "error");
+            return s;
+          }
+          return next;
+        }),
       napPet: (petId) =>
         set((s) => petAct.napPet(s, petId, Date.now())),
       feedPet: (petId) =>

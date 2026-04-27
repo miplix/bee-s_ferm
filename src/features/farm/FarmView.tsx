@@ -471,10 +471,13 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
     const harvestsLeft = cell.fruitHarvestsLeft ?? 0;
     return (
       <div onClick={onClick}
-        className={`relative flex flex-col items-center justify-center cursor-pointer
-          border border-black/10 ${ready ? "bg-[#4a2a60] animate-pulse" : "bg-[#3a1a50] hover:bg-[#4a2a60]"} ${moveOverlay}`}
+        className={`relative flex flex-col items-center justify-center cursor-pointer ${ready ? "animate-pulse" : ""} ${moveOverlay}`}
         style={{ width: CELL_SIZE, height: CELL_SIZE }}>
-        <span className="text-lg">{fruitDef ? fruitDef.emoji : (selectedTool?.endsWith("_seed") ? "➕" : "🌿")}</span>
+        {!growing && (
+          <img src="/plot/plot_empty.png" alt="" className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+               onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+        )}
+        <span className="relative text-lg">{fruitDef ? fruitDef.emoji : (selectedTool?.endsWith("_seed") ? "➕" : "")}</span>
         {growing && !ready && fruitDef && (
           <>
             <span className="absolute font-game text-white leading-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]"
@@ -500,10 +503,13 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
     const ready = prog >= 1;
     return (
       <div onClick={onClick}
-        className={`relative flex flex-col items-center justify-center cursor-pointer
-          border border-black/10 ${ready ? "bg-[#5a1a4a] animate-pulse" : "bg-[#3a1a35] hover:bg-[#5a1a4a]"} ${moveOverlay}`}
+        className={`relative flex flex-col items-center justify-center cursor-pointer ${ready ? "animate-pulse" : ""} ${moveOverlay}`}
         style={{ width: CELL_SIZE, height: CELL_SIZE }}>
-        <span className="text-lg">{flowerDef ? flowerDef.emoji : (selectedTool?.endsWith("_seed") ? "➕" : "🌱")}</span>
+        {!growing && (
+          <img src="/plot/plot_empty.png" alt="" className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+               onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+        )}
+        <span className="relative text-lg">{flowerDef ? flowerDef.emoji : (selectedTool?.endsWith("_seed") ? "➕" : "")}</span>
         {growing && !ready && flowerDef && (
           <>
             <span className="absolute font-game text-white leading-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]"
