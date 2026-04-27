@@ -35,6 +35,8 @@ import { toast } from "./toastStore";
 import { getCropDef, ISLAND_ORDER } from "../data/crops.data";
 import { getLevel } from "../domain/level/level";
 import { getCurrentSeason, isCropInSeason, SEASON_INFO } from "../domain/seasons/seasons";
+import { RESOURCE_NODES } from "../data/resourceNodes.data";
+import { toolForNode, getToolDef } from "../data/tools.data";
 
 export interface StoreActions {
   // UI
@@ -267,7 +269,37 @@ export const useStore = create<Store>()(
       gatherNode: (x, y) =>
         set((s) => {
           const next = resAct.gatherNode(s, x, y, Date.now());
-          if (next === s) toast("Нет инструмента или узел на кулдауне", "error");
+          if (next === s) {
+            // Diagnose why the hit failed
+            const key = `${x},${y}`;
+            const cell = s.cells[key];
+            const realKey = cell?.parentKey ?? key;
+            const realCell = s.cells[realKey];
+            if (!realCell) { toast("Здесь ничего нет", "error"); return s; }
+            const nodeDef = RESOURCE_NODES[realCell.type];
+            if (!nodeDef) { toast("Это не нода", "error"); return s; }
+            // Cooldown check
+            const cd = nodeDef.cooldownMs;
+            const last = realCell.lastHarvest ?? 0;
+            const remaining = (last + cd) - Date.now();
+            if (remaining > 0) {
+              const hours = Math.floor(remaining / 3600000);
+              const mins = Math.floor((remaining % 3600000) / 60000);
+              toast(`Восстанавливается ${hours > 0 ? hours + 'ч ' : ''}${mins}м`, "error"); return s;
+            }
+            // Exhausted check
+            if (nodeDef.maxNodes >= 0 && (realCell.hitsLeft ?? 0) <= 0) {
+              toast("Нода истощена — нужно расширить остров чтобы восстановить", "error"); return s;
+            }
+            // Tool check
+            const toolId = toolForNode(realCell.type);
+            if (toolId && (s.inventory[toolId] ?? 0) < 1) {
+              const toolDef = getToolDef(toolId);
+              toast(`Нет инструмента: нужен ${toolDef.name} ${toolDef.emoji}`, "error"); return s;
+            }
+            toast("Нельзя добыть", "error");
+            return s;
+          }
           return next;
         }),
 
