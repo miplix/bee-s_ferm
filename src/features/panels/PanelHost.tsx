@@ -17,6 +17,7 @@ import { FactionPanel } from "./FactionPanel";
 import { CropMachinePanel } from "./CropMachinePanel";
 import { SettingsPanel } from "./SettingsPanel";
 import { DevPanel } from "./DevPanel";
+import { DailyRewardPopup } from "./DailyRewardPopup";
 
 export function PanelHost() {
   const activePanel = useStore((s) => s.activePanel);
@@ -42,6 +43,7 @@ export function PanelHost() {
     case "crop_machine": return <CropMachinePanel />;  // via Crop Machine building
     case "settings":     return <SettingsPanel />;     // via HUD settings button
     case "dev":          return <DevPanel />;          // via D key (dev cheats)
+    case "daily_reward": return <DailyRewardPopup />;  // via daily chest on island
     default:             return null;
   }
 }

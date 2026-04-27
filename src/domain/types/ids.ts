@@ -38,7 +38,7 @@ export type PanelId =
   | "shop" | "inventory" | "cook" | "craft"
   | "build" | "expand" | "beehive" | "animals"
   | "fishing" | "skills" | "deliveries" | "chores"
-  | "trading" | "faction" | "pets" | "crop_machine" | "settings" | "dev";
+  | "trading" | "faction" | "pets" | "crop_machine" | "settings" | "dev" | "daily_reward";
 
 export type LocationId = "farm" | "henhouse" | "barn";
 
