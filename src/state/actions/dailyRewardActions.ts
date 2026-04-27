@@ -1,45 +1,67 @@
 import type { GameState } from "../../domain/types/game";
-import { isoWeekKey, rollWeeklyBonus } from "../../data/dailyRewards.data";
-import { getLevel } from "../../domain/level/level";
+import { isoDayKey, previousDayKey, getDailyChoices } from "../../data/dailyRewards.data";
 
-/** Can the player claim this week's bonus? */
+/** Can the player claim today's bonus? */
 export function canClaimDailyReward(state: GameState, now: number): boolean {
-  return state.dailyReward.lastClaimDay !== isoWeekKey(now);
+  return state.dailyReward.lastClaimDay !== isoDayKey(now);
 }
 
-/** Reward day is unused under the weekly system — kept for popup compatibility. */
-export function getCurrentRewardDay(_state: GameState, _now: number): number {
-  return 1;
+/** Compute the streak the player would be on if they claim now (resets if a day was missed). */
+export function getCurrentStreakDay(state: GameState, now: number): number {
+  const last = state.dailyReward.lastClaimDay;
+  if (!last) return 1; // first ever claim
+  const yesterday = previousDayKey(now);
+  if (last === yesterday) {
+    return state.dailyReward.streak + 1; // streak continues
+  }
+  return 1; // missed a day — start over
 }
 
-/** Get the weekly bonus the player would claim if they claimed now. */
-export function previewWeeklyBonus(state: GameState, now: number) {
-  const level = getLevel(state.xp);
-  return rollWeeklyBonus(level, isoWeekKey(now));
+/** Compatibility shim for old DailyRewardPopup. */
+export function getCurrentRewardDay(state: GameState, now: number): number {
+  return getCurrentStreakDay(state, now);
 }
 
-/** Claim the weekly bonus. */
-export function claimDailyReward(state: GameState, now: number): GameState {
+/** Get menu of choices for current streak. */
+export function getDailyMenu(state: GameState, now: number) {
+  const day = getCurrentStreakDay(state, now);
+  return getDailyChoices(day);
+}
+
+/**
+ * Claim the daily reward: player picks one option (by index).
+ * Without index, picks coins (option 0) for backwards compatibility.
+ */
+export function claimDailyReward(state: GameState, now: number, optionIndex = 0): GameState {
   if (!canClaimDailyReward(state, now)) return state;
 
-  const week = isoWeekKey(now);
-  const level = getLevel(state.xp);
-  const bonus = rollWeeklyBonus(level, week);
+  const day = getCurrentStreakDay(state, now);
+  const opts = getDailyChoices(day);
+  const choice = opts[Math.max(0, Math.min(optionIndex, opts.length - 1))];
 
   const inv = { ...state.inventory };
-  if (bonus.itemId) {
-    inv[bonus.itemId] = (inv[bonus.itemId] ?? 0) + bonus.itemQty;
+  let coins = state.coins;
+  if (choice.kind === "coins") {
+    coins = parseFloat((coins + choice.qty).toFixed(4));
+  } else {
+    inv[choice.itemId] = (inv[choice.itemId] ?? 0) + choice.qty;
   }
-  const newCoins = parseFloat((state.coins + bonus.coins).toFixed(4));
 
   return {
     ...state,
+    coins,
     inventory: inv,
-    coins: newCoins,
     dailyReward: {
-      lastClaimDay: week,
-      streak: state.dailyReward.streak + 1,
+      lastClaimDay: isoDayKey(now),
+      streak: day,
     },
     lastMeaningfulActivity: now,
   };
+}
+
+/** Compat preview for old code paths. */
+export function previewWeeklyBonus(state: GameState, now: number) {
+  const opts = getDailyMenu(state, now);
+  const first = opts[0];
+  return { coins: first.kind === "coins" ? first.qty : 0, itemId: first.kind === "coins" ? null : first.itemId, itemQty: first.qty };
 }

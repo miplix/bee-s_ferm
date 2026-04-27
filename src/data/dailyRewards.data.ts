@@ -1,57 +1,55 @@
-// Weekly login bonus — replaces the daily reward.
-// Random bonus scaled by player level. Once per ISO week.
-// Daily rewards moved to future VIP/subscription tier.
+// Daily login bonus — small rewards, streak resets on a missed day.
+// Player picks ONE resource from a 3-5 option menu per day.
 
-export interface WeeklyBonus {
-  coins: number;
-  itemId: string | null;
-  itemQty: number;
+export type RewardKind = "coins" | "wheat" | "tool" | "basic_seed" | "advanced_seed";
+
+export interface RewardOption {
+  kind: RewardKind;
+  itemId: string;       // specific itemId (e.g. "sunflower_seed", "axe", "coins")
+  qty: number;
+  label: string;        // user-facing label (RU)
 }
 
-/** Get ISO week id like "2026-W17" — used as the claim key. */
-export function isoWeekKey(now: number): string {
-  const d = new Date(now);
-  const day = d.getUTCDay() || 7;
-  d.setUTCDate(d.getUTCDate() + 4 - day);
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  const weekNo = Math.ceil(((d.getTime() - yearStart.getTime()) / 86_400_000 + 1) / 7);
-  return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
+/** ISO date "YYYY-MM-DD" of given timestamp (UTC). */
+export function isoDayKey(now: number): string {
+  return new Date(now).toISOString().slice(0, 10);
+}
+
+/** ISO date of previous day. */
+export function previousDayKey(now: number): string {
+  return new Date(now - 86_400_000).toISOString().slice(0, 10);
 }
 
 /**
- * Roll the weekly bonus for a given level using a deterministic seeded RNG
- * keyed on (week, level) so the popup shows the same numbers across renders
- * within a week, but varies between weeks and players.
+ * Build the choice menu for a given streak day.
+ * Caps (per user spec):
+ * - coins:        ≤ 10
+ * - wheat:        ≤ 10
+ * - basic seeds:  ≤ 100  (sunflower / potato / carrot)
+ * - advanced:     ≤ 20   (zucchini and above)
+ * - tools:        ≤ 3    (only after streak ≥ 7)
+ * After day 30, all caps × 2 (rough scaling — placeholder for richer monthly tier).
  */
-export function rollWeeklyBonus(level: number, weekKey: string): WeeklyBonus {
-  // Cheap seeded LCG from week+level
-  let seed = 2166136261;
-  const s = `${weekKey}:${level}`;
-  for (let i = 0; i < s.length; i++) seed = Math.imul(seed ^ s.charCodeAt(i), 16777619);
-  const rng = () => {
-    seed = Math.imul(seed ^ (seed >>> 15), 0x85ebca6b);
-    seed = Math.imul(seed ^ (seed >>> 13), 0xc2b2ae35);
-    return ((seed ^ (seed >>> 16)) >>> 0) / 0xffffffff;
-  };
-
-  // Coins: base 100 + level × 30 ± 40% variance
-  const base = 100 + level * 30;
-  const coins = Math.round(base * (0.6 + rng() * 0.8));
-
-  // Random seed item from a pool — higher level unlocks better seeds
-  const pool = [
-    { itemId: "sunflower_seed", qtyMin: 5,  qtyMax: 15 },
-    { itemId: "potato_seed",    qtyMin: 3,  qtyMax: 10 },
-    { itemId: "carrot_seed",    qtyMin: 2,  qtyMax: 8 },
-    { itemId: "pumpkin_seed",   qtyMin: 2,  qtyMax: 6, minLevel: 2 },
-    { itemId: "cabbage_seed",   qtyMin: 2,  qtyMax: 5, minLevel: 3 },
-    { itemId: "wheat_seed",     qtyMin: 2,  qtyMax: 5, minLevel: 5 },
-    { itemId: "kale_seed",      qtyMin: 1,  qtyMax: 3, minLevel: 9 },
-  ].filter((p) => (p.minLevel ?? 1) <= level);
-
-  const pick = pool[Math.floor(rng() * pool.length)];
-  const qtyRange = pick.qtyMax - pick.qtyMin;
-  const itemQty = pick.qtyMin + Math.floor(rng() * (qtyRange + 1));
-
-  return { coins, itemId: pick.itemId, itemQty };
+export function getDailyChoices(streakDay: number): RewardOption[] {
+  const monthly = streakDay > 30 ? 2 : 1;
+  const opts: RewardOption[] = [
+    { kind: "coins",       itemId: "coins",          qty: Math.min(10 * monthly, 20),  label: `${10 * monthly} монет` },
+    { kind: "wheat",       itemId: "wheat",          qty: Math.min(10 * monthly, 20),  label: `${10 * monthly} пшеницы` },
+    { kind: "basic_seed",  itemId: "sunflower_seed", qty: Math.min(50 * monthly, 100), label: `${50 * monthly} семян подсолнуха` },
+    { kind: "basic_seed",  itemId: "potato_seed",    qty: Math.min(30 * monthly, 60),  label: `${30 * monthly} семян картофеля` },
+    { kind: "basic_seed",  itemId: "carrot_seed",    qty: Math.min(20 * monthly, 40),  label: `${20 * monthly} семян моркови` },
+  ];
+  // Advanced seeds unlock at streak 3+
+  if (streakDay >= 3) {
+    opts.push({ kind: "advanced_seed", itemId: "zucchini_seed", qty: Math.min(10 * monthly, 20), label: `${10 * monthly} семян цукини` });
+  }
+  if (streakDay >= 5) {
+    opts.push({ kind: "advanced_seed", itemId: "cabbage_seed", qty: Math.min(10 * monthly, 20), label: `${10 * monthly} семян капусты` });
+  }
+  // Tools unlock at streak 7+
+  if (streakDay >= 7) {
+    opts.push({ kind: "tool", itemId: "axe", qty: Math.min(2 * monthly, 3), label: `${2 * monthly} топор` });
+    opts.push({ kind: "tool", itemId: "stone_pickaxe", qty: Math.min(2 * monthly, 3), label: `${2 * monthly} деревянная кирка` });
+  }
+  return opts;
 }
