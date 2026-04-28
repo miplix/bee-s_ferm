@@ -325,6 +325,8 @@ export function createInitialState(): GameState {
 
   // Tree 3 at (0,2)
   put2x2(cells, 0, 2, { type: "tree", hitsLeft: -1, lastHarvest: 0 });
+  // Daily chest in middle of farm
+  put1(cells, 3, 3, { type: "daily_chest" });
   // Plots right of tree 3
   put1(cells, 4, 2, { type: "plot" });
   put1(cells, 5, 2, { type: "plot" });

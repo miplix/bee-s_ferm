@@ -675,6 +675,28 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
     );
   }
 
+  // Daily chest (1x1) — closed when claim available, open after claim
+  if (cell.type === "daily_chest") {
+    const dailyReward = (window as any).__store?.getState().dailyReward;
+    const today = new Date(now).toISOString().slice(0, 10);
+    const canClaim = dailyReward?.lastClaimDay !== today;
+    return (
+      <div onClick={onClick}
+        className={`relative flex items-center justify-center cursor-pointer ${canClaim ? "animate-pulse" : "opacity-70"} ${moveOverlay}`}
+        style={{ width: CELL_SIZE, height: CELL_SIZE }}>
+        <img
+          src={canClaim ? "/chest/chest_closed.png" : "/chest/chest_open.png"}
+          alt=""
+          className="w-full h-full object-contain pointer-events-none"
+          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+        />
+        {canClaim && (
+          <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[7px] font-game px-1 border border-black">!</span>
+        )}
+      </div>
+    );
+  }
+
   // Beehive
   if (cell.type === "beehive") {
     const bee = cell.beehiveIdx != null ? beehives[cell.beehiveIdx] : null;

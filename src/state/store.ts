@@ -583,6 +583,11 @@ export const useStore = create<Store>()(
         const cell = s.cells[key];
         if (!cell) return;
 
+        if (cell.type === "daily_chest") {
+          set({ activePanel: "daily_reward" as any });
+          return;
+        }
+
         if (cell.type === "plot") {
           if (cell.cropId && cell.plantedAt) {
             set((prev) => cropAct.harvest(prev, cx, cy, now));

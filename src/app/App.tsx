@@ -4,7 +4,7 @@ import { Quickbar } from "../features/hud/Quickbar";
 import { FarmView } from "../features/farm/FarmView";
 import { PanelHost } from "../features/panels/PanelHost";
 import { ErrorBoundary } from "../features/shared/ErrorBoundary";
-import { DailyChest } from "../features/farm/DailyChest";
+// DailyChest moved to be a cell on the island (see daily_chest CellType)
 import { WelcomeScreen } from "../features/panels/WelcomeScreen";
 import { Toaster } from "../features/shared/Toaster";
 import { usePassiveTick } from "../hooks/usePassiveTick";
@@ -30,7 +30,6 @@ function GameRoot() {
       <Hud />
       <FarmView />
       <Quickbar />
-      <DailyChest />
       <PanelHost />
       <WelcomeScreen />
       <Toaster />

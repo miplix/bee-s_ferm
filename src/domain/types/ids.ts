@@ -52,4 +52,5 @@ export type GreenhouseCropId = "grape" | "rice" | "olive";
 export type CellType =
   | "empty" | "plot" | "tree" | "rock" | "iron" | "gold" | "crimstone"
   | "oil_reserve" | "obsidian_rock" | "sunstone_rock" | "lava_pit"
-  | "building" | "beehive" | "fruit_patch" | "flower_bed" | "greenhouse";
+  | "building" | "beehive" | "fruit_patch" | "flower_bed" | "greenhouse"
+  | "daily_chest";
