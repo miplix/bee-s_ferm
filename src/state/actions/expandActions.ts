@@ -136,14 +136,24 @@ export function completeExpansion(state: GameState, now: number): GameState {
   for (let i = 0; i < (exp.adds.sunstone_rock ?? 0); i++) place1x1({ type: "sunstone_rock", hitsLeft: RESOURCE_NODES.sunstone_rock.maxNodes, lastHarvest: 0 });
   for (let i = 0; i < (exp.adds.lava_pit ?? 0); i++) place1x1({ type: "lava_pit", hitsLeft: -1, lastHarvest: 0 });
 
-  // Restore exhausted finite nodes on existing blocks
-  const finiteTypes = ["rock", "iron", "gold", "crimstone", "oil_reserve", "obsidian_rock", "sunstone_rock"];
+  // Refresh ALL existing resource nodes — reset cooldowns + restore exhausted finite nodes.
+  // Expansion reward: every tree/rock/ore on already-unlocked blocks becomes ready to gather again.
+  const nodeTypes = ["tree", "rock", "iron", "gold", "crimstone", "oil_reserve", "obsidian_rock", "sunstone_rock", "lava_pit"];
   for (const [key, cell] of Object.entries(cells)) {
-    if (finiteTypes.includes(cell.type) && !cell.parentKey) {
+    if (nodeTypes.includes(cell.type) && !cell.parentKey) {
       const nodeDef = RESOURCE_NODES[cell.type];
-      if (nodeDef && nodeDef.maxNodes >= 0 && (cell.hitsLeft ?? 0) <= 0) {
-        cells[key] = { ...cell, hitsLeft: nodeDef.maxNodes, lastHarvest: 0 };
+      if (!nodeDef) continue;
+      const refreshed: typeof cell = {
+        ...cell,
+        lastHarvest: 0,        // reset cooldown
+        currentHits: 0,        // reset progress
+        lastHitAt: 0,
+      };
+      // Refill exhausted finite nodes
+      if (nodeDef.maxNodes >= 0 && (cell.hitsLeft ?? 0) <= 0) {
+        refreshed.hitsLeft = nodeDef.maxNodes;
       }
+      cells[key] = refreshed;
     }
   }
 

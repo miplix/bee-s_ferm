@@ -200,12 +200,21 @@ export function FarmView() {
           justifyContent: "center",
         }}
       >
-      {/* Island grid — grass goes on each in-block cell, not the whole container */}
+      {/* Island grid — grass on each in-block cell + 3D floating island look */}
       <div
         className="grid gap-0 relative"
         style={{
           gridTemplateColumns: `repeat(${bounds.gridW}, ${CELL_SIZE}px)`,
           gridTemplateRows: `repeat(${bounds.gridH}, ${CELL_SIZE}px)`,
+          // Brown earth side-walls + drop shadow for floating effect
+          boxShadow: [
+            "0 4px 0 #5a3a1a",
+            "0 8px 0 #4a2a10",
+            "0 12px 0 #3a200a",
+            "0 16px 0 #2a1505",
+            "0 22px 16px rgba(0,0,0,0.45)",
+          ].join(", "),
+          borderRadius: "4px",
         }}
       >
         {Array.from({ length: bounds.gridH }, (_, gy) =>
