@@ -604,6 +604,18 @@ export const useStore = create<Store>()(
         }
 
         if (cell.type === "fruit_patch") {
+          // Stump (harvestsLeft===0): require axe to clear
+          if (cell.fruitHarvestsLeft === 0 && !cell.fruitId) {
+            if (s.selectedTool === "axe") {
+              const before = get().inventory.axe ?? 0;
+              set((prev) => fruitAct.cutSapling(prev, cx, cy, now));
+              const after = get().inventory.axe ?? 0;
+              if (after === before) toast("Нет топора для срубки пенька", "error");
+            } else {
+              toast("Возьми топор чтобы срубить пенёк (древесину не даёт)", "error");
+            }
+            return;
+          }
           if (cell.fruitId && cell.fruitPlantedAt) {
             set((prev) => fruitAct.harvestFruit(prev, cx, cy, now));
             return;

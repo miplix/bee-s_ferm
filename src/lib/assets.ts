@@ -56,6 +56,34 @@ export function buildingSrc(buildingId: string, level = 1): string {
   return map[buildingId] ?? "";
 }
 
+/** Fruit growth stage sprite by progress + harvests-left.
+ * Stages: empty patch / sapling / growing / fruiting / stump (no harvests left, awaiting cut). */
+export function fruitStageSrc(fruitId: string, growing: boolean, prog: number, ready: boolean, harvestsLeft: number): string {
+  if (!growing) {
+    if (harvestsLeft === 0) return `/stages/fruit_stump.png`; // tree spent → needs cut
+    return `/plot/fruit_patch_empty.png`;
+  }
+  if (ready) {
+    // Use existing SFL "ready" sprites where available, else generated fruiting
+    const sflReady: Record<string, string> = {
+      tomato: "/fruits/tomato/ready.webp",
+      lemon: "/fruits/lemon/ready.webp",
+      banana: "/fruits/banana/ready.png",
+    };
+    return sflReady[fruitId] ?? `/stages/${fruitId}_fruiting.png`;
+  }
+  if (prog < 0.5) return `/stages/${fruitId}_sapling.png`;
+  return `/stages/${fruitId}_growing.png`;
+}
+
+/** Flower growth stage by progress. Stages: sprout / budding / bloomed. */
+export function flowerStageSrc(flowerId: string, growing: boolean, prog: number, ready: boolean): string {
+  if (!growing) return `/plot/flower_bed_empty.png`;
+  if (ready) return `/stages/${flowerId}_bloomed.png`;
+  if (prog < 0.5) return `/stages/${flowerId}_sprout.png`;
+  return `/stages/${flowerId}_budding.png`;
+}
+
 export function beehiveSrc(level: number): string {
   if (level >= 3) return "/beehives/ai_beehive_lv3.png";
   if (level >= 2) return "/beehives/ai_beehive_lv2.png";

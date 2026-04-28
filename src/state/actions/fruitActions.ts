@@ -84,12 +84,12 @@ export function harvestFruit(
   inv[cell.fruitId] = (inv[cell.fruitId] ?? 0) + 1;
 
   if (harvestsLeft <= 0) {
-    // Bush depleted — reset to empty fruit patch
+    // Bush depleted — leave as stump until player cuts it (cutSapling)
     cells[key] = {
       ...cell,
       fruitId: null,
       fruitPlantedAt: null,
-      fruitHarvestsLeft: null,
+      fruitHarvestsLeft: 0,            // 0 = stump, awaits cut
       lastFruitHarvest: null,
     };
   } else {
@@ -107,4 +107,27 @@ export function harvestFruit(
     inventory: inv,
     lastMeaningfulActivity: now,
   };
+}
+
+/**
+ * Cut a depleted fruit-tree stump (harvestsLeft === 0). Requires 1 axe.
+ * Does NOT drop wood — just clears the patch for replanting.
+ */
+export function cutSapling(state: GameState, cx: number, cy: number, now: number): GameState {
+  const key = cellKey(cx, cy);
+  const cell = state.cells[key];
+  if (!cell || cell.type !== "fruit_patch") return state;
+  if (cell.fruitHarvestsLeft !== 0 || cell.fruitId) return state; // not a stump
+
+  const axes = state.inventory.axe ?? 0;
+  if (axes < 1) return state;
+
+  const inv = { ...state.inventory };
+  inv.axe = axes - 1;
+  if (inv.axe! <= 0) delete inv.axe;
+
+  const cells = { ...state.cells };
+  cells[key] = { ...cell, fruitHarvestsLeft: null };
+
+  return { ...state, cells, inventory: inv, lastMeaningfulActivity: now };
 }

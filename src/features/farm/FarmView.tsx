@@ -17,7 +17,7 @@ import { getLevel } from "../../domain/level/level";
 import { cellKey } from "../../domain/types/game";
 import type { Cell } from "../../domain/types/game";
 import type { CropId, FruitId, FlowerId } from "../../domain/types/ids";
-import { cropStageSrc, nodeSrc, buildingSrc, beehiveSrc } from "../../lib/assets";
+import { cropStageSrc, nodeSrc, buildingSrc, beehiveSrc, fruitStageSrc, flowerStageSrc } from "../../lib/assets";
 import { getCurrentSeason } from "../../domain/seasons/seasons";
 
 const CELL_SIZE = 52;
@@ -487,6 +487,8 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
     const harvestsLeft = cell.fruitHarvestsLeft ?? 0;
     const is2x2 = (cell.w ?? 1) >= 2;
     const sz = is2x2 ? 2 : 1;
+    const fruitImg = fruitDef ? fruitStageSrc(fruitDef.id, !!growing, prog, ready, harvestsLeft) : (harvestsLeft === 0 && cell.fruitId === null ? "/stages/fruit_stump.png" : "/plot/fruit_patch_empty.png");
+    const isStump = !growing && harvestsLeft === 0;
     return (
       <div onClick={onClick}
         {...hoverHandlers}
@@ -496,13 +498,12 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
           overflow: is2x2 ? "visible" : "hidden",
           zIndex: is2x2 ? 10 : 1,
         }}>
-        {!growing && (
-          <img src="/plot/fruit_patch_empty.png" alt=""
-               className="absolute object-contain pointer-events-none max-w-none"
-               style={{ top: 0, left: 0, width: CELL_SIZE * sz, height: CELL_SIZE * sz }}
-               onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-        )}
-        <span className="relative text-2xl">{fruitDef ? fruitDef.emoji : (selectedTool?.endsWith("_seed") ? "➕" : "")}</span>
+        <img src={fruitImg} alt=""
+             className="absolute object-contain pointer-events-none max-w-none"
+             style={{ top: 0, left: 0, width: CELL_SIZE * sz, height: CELL_SIZE * sz }}
+             onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+        {!growing && !isStump && selectedTool?.endsWith("_seed") && <span className="relative text-2xl">➕</span>}
+        {isStump && <span className="absolute top-0 right-0 text-[8px] font-game text-orange-300">🪓</span>}
         {growing && !ready && fruitDef && (
           <>
             <span className="absolute font-game text-white leading-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]"
@@ -526,15 +527,14 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
     const growing = !!cell.flowerId && !!cell.flowerPlantedAt;
     const prog = growing && flowerDef ? calcProgress(cell.flowerPlantedAt!, flowerDef.growMs, now) : -1;
     const ready = prog >= 1;
+    const flowerImg = flowerStageSrc(flowerDef?.id ?? "", !!growing, prog, ready);
     return (
       <div onClick={onClick}
         className={`relative flex flex-col items-center justify-center cursor-pointer ${ready ? "animate-pulse" : ""} ${moveOverlay}`}
         style={{ width: CELL_SIZE, height: CELL_SIZE }}>
-        {!growing && (
-          <img src="/plot/flower_bed_empty.png" alt="" className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-               onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-        )}
-        <span className="relative text-lg">{flowerDef ? flowerDef.emoji : (selectedTool?.endsWith("_seed") ? "➕" : "")}</span>
+        <img src={flowerImg} alt="" className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+             onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+        {!growing && selectedTool?.endsWith("_seed") && <span className="relative text-lg">➕</span>}
         {growing && !ready && flowerDef && (
           <>
             <span className="absolute font-game text-white leading-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]"
