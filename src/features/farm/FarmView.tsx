@@ -110,6 +110,20 @@ export function FarmView() {
   const bounds = computeGridBounds(allPositions);
   const blockSet = new Set(blocks.map((b) => `${b.bx},${b.by}`));
 
+  // Bounding box of UNLOCKED blocks only (for earth/3D-island layer)
+  const unlockedBox = blocks.length > 0 ? (() => {
+    const minBx = Math.min(...blocks.map((b) => b.bx));
+    const maxBx = Math.max(...blocks.map((b) => b.bx));
+    const minBy = Math.min(...blocks.map((b) => b.by));
+    const maxBy = Math.max(...blocks.map((b) => b.by));
+    return {
+      left: (minBx * BLOCK_SIZE - bounds.minCellX) * CELL_SIZE,
+      top: (minBy * BLOCK_SIZE - bounds.minCellY) * CELL_SIZE,
+      width: (maxBx - minBx + 1) * BLOCK_SIZE * CELL_SIZE,
+      height: (maxBy - minBy + 1) * BLOCK_SIZE * CELL_SIZE,
+    };
+  })() : null;
+
   // Pending expansion
   const pendingReady = pendingExpansion
     ? isReady(pendingExpansion.startedAt, pendingExpansion.durationMs, now)
@@ -200,23 +214,35 @@ export function FarmView() {
           justifyContent: "center",
         }}
       >
-      {/* Island grid — grass on each in-block cell + 3D floating island look */}
+      {/* Island grid */}
       <div
         className="grid gap-0 relative"
         style={{
           gridTemplateColumns: `repeat(${bounds.gridW}, ${CELL_SIZE}px)`,
           gridTemplateRows: `repeat(${bounds.gridH}, ${CELL_SIZE}px)`,
-          // Brown earth side-walls + drop shadow for floating effect
-          boxShadow: [
-            "0 4px 0 #5a3a1a",
-            "0 8px 0 #4a2a10",
-            "0 12px 0 #3a200a",
-            "0 16px 0 #2a1505",
-            "0 22px 16px rgba(0,0,0,0.45)",
-          ].join(", "),
-          borderRadius: "4px",
         }}
       >
+        {/* Earth/3D layer — covers ONLY unlocked blocks (not next-block preview) */}
+        {unlockedBox && (
+          <div
+            className="absolute pointer-events-none"
+            style={{
+              left: unlockedBox.left,
+              top: unlockedBox.top,
+              width: unlockedBox.width,
+              height: unlockedBox.height,
+              boxShadow: [
+                "0 4px 0 #5a3a1a",
+                "0 8px 0 #4a2a10",
+                "0 12px 0 #3a200a",
+                "0 16px 0 #2a1505",
+                "0 22px 16px rgba(0,0,0,0.45)",
+              ].join(", "),
+              borderRadius: "4px",
+              zIndex: -1,
+            }}
+          />
+        )}
         {Array.from({ length: bounds.gridH }, (_, gy) =>
           Array.from({ length: bounds.gridW }, (_, gx) => {
             const cx = bounds.minCellX + gx;
