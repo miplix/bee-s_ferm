@@ -320,9 +320,18 @@ export function FarmView() {
               );
             }
 
-            // Normal cell — wrap in grass background (only inside expanded blocks)
+            // Normal cell — wrap in grass background (only inside expanded blocks).
+            // Round corner of cell when it's at the outer corner of the island shape.
+            const lx = cx - bx * BLOCK_SIZE;
+            const ly = cy - by * BLOCK_SIZE;
+            const noTop    = ly === 0                 && !blockSet.has(`${bx},${by - 1}`);
+            const noBottom = ly === BLOCK_SIZE - 1    && !blockSet.has(`${bx},${by + 1}`);
+            const noLeft   = lx === 0                 && !blockSet.has(`${bx - 1},${by}`);
+            const noRight  = lx === BLOCK_SIZE - 1    && !blockSet.has(`${bx + 1},${by}`);
+            const R = 14;
+            const cornerRadius = `${noTop && noLeft ? R : 0}px ${noTop && noRight ? R : 0}px ${noBottom && noRight ? R : 0}px ${noBottom && noLeft ? R : 0}px`;
             return (
-              <div key={`${gx}-${gy}`} style={grassStyle}>
+              <div key={`${gx}-${gy}`} style={{ ...grassStyle, borderRadius: cornerRadius }}>
                 <CellView cell={cell} cx={cx} cy={cy}
                   onClick={() => clickCell(cx, cy)} selectedTool={selectedTool}
                   moveMode={moveMode} moveSource={moveSource}
