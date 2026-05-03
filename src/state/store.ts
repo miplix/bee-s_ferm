@@ -747,3 +747,10 @@ export const useStore = create<Store>()(
 if (typeof window !== "undefined") {
   (window as any).__store = useStore;
 }
+
+// Sync to Supabase (debounced) on every meaningful state change
+import { schedulePush } from "../lib/supabase/sync";
+useStore.subscribe((state) => {
+  // Skip transient UI fields
+  schedulePush(state as any);
+});

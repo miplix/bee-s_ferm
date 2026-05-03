@@ -7,6 +7,7 @@ import { ErrorBoundary } from "../features/shared/ErrorBoundary";
 // DailyChest moved to be a cell on the island (see daily_chest CellType)
 import { WelcomeScreen } from "../features/panels/WelcomeScreen";
 import { Toaster } from "../features/shared/Toaster";
+import { AuthScreen } from "../features/auth/AuthScreen";
 import { usePassiveTick } from "../hooks/usePassiveTick";
 import { useStore } from "../state/store";
 
@@ -31,6 +32,7 @@ function GameRoot() {
       <FarmView />
       <Quickbar />
       <PanelHost />
+      <AuthScreen />
       <WelcomeScreen />
       <Toaster />
     </div>
