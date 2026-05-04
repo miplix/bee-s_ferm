@@ -88,7 +88,12 @@ export function buyBeehive(
   const maxSlots = maxBeehiveSlots(level, state.island, vipActive);
   if (state.beehives.length >= maxSlots) return state;
 
-  if (state.pollen < BEEHIVE_LV1_COST) return state;
+  // VIP perk: первый улей бесплатный, если у игрока ещё нет ни одного.
+  // Если VIP истечёт — улей становится inactive (через slot-логику в accrual).
+  const isFirstFreeFromVip = vipActive && state.beehives.length === 0;
+  const cost = isFirstFreeFromVip ? 0 : BEEHIVE_LV1_COST;
+
+  if (state.pollen < cost) return state;
 
   const hive: BeehiveState = {
     id: crypto.randomUUID(),
@@ -102,7 +107,7 @@ export function buyBeehive(
 
   return {
     ...state,
-    pollen: parseFloat((state.pollen - BEEHIVE_LV1_COST).toFixed(4)),
+    pollen: parseFloat((state.pollen - cost).toFixed(4)),
     beehives: [...state.beehives, hive],
     lastMeaningfulActivity: now,
   };

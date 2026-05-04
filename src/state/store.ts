@@ -32,6 +32,7 @@ import * as factionAct from "./actions/factionActions";
 import * as compostAct from "./actions/compostActions";
 import { placePending } from "./actions/placementActions";
 import { applyPollenBoost, POLLEN_COST } from "./actions/pollenBoostActions";
+import { claimVipChest as _claimVipChest } from "./actions/vipChestActions";
 import { sfx } from "../lib/sound";
 import { toast } from "./toastStore";
 import { getCropDef, ISLAND_ORDER } from "../data/crops.data";
@@ -174,6 +175,8 @@ export interface StoreActions {
   pollenBoostMode: boolean;
   togglePollenBoost(): void;
   applyPollenBoost(cx: number, cy: number): void;
+  // VIP chest
+  claimVipChest(): void;
   cancelMove(): void;
 
   // Grid click (dispatches correct action based on cell type + selected tool)
@@ -579,6 +582,14 @@ export const useStore = create<Store>()(
           sfx.plant();
           return next;
         }),
+      // --- VIP Chest ---
+      claimVipChest: () =>
+        set((s) => {
+          const next = _claimVipChest(s, Date.now());
+          if (next !== s) sfx.reward();
+          return next;
+        }),
+
       // --- Move ---
       toggleMoveMode: () =>
         set((s) => ({ moveMode: !s.moveMode, moveSource: null })),

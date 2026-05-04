@@ -279,8 +279,9 @@ export interface GameState {
   // anti-bot
   lastMeaningfulActivity: number;
 
-  // VIP subscription (gives +1 beehive slot while active)
-  vipExpiresAt?: number | null;            // unix ms; null/undefined = no VIP
+  // VIP subscription (gives +1 beehive slot + free first hive + VIP daily chest)
+  vipExpiresAt?: number | null;
+  vipChest?: { lastClaimDay: string; streak: number } | null; // daily VIP chest tracking
   // Hash list of NEAR txes already credited (prevent replay)
   processedTxHashes?: string[];
 
@@ -425,6 +426,7 @@ export function createInitialState(): GameState {
     petStates: {},
     pendingPlacements: {},
     vipExpiresAt: null,
+    vipChest: null,
     processedTxHashes: [],
 
     lastMeaningfulActivity: now,

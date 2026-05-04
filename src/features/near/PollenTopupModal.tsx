@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { sendNear, getAccount } from "../../lib/near/wallet";
 import { useStore } from "../../state/store";
-import { creditPollen } from "../../state/actions/nearPaymentActions";
+import { creditPollen, POLLEN_PER_NEAR } from "../../state/actions/nearPaymentActions";
 import { toast } from "../../state/toastStore";
 
 /** Modal for topping up pollen via NEAR transfer (1 NEAR = 1 pollen). */
@@ -18,7 +18,7 @@ export function PollenTopupModal({ onClose }: { onClose: () => void }) {
     try {
       const txHash = await sendNear(n, "pollen-topup");
       useStore.setState((s) => creditPollen(s as any, n, txHash) as any);
-      toast(`+${n} пыльцы (tx ${txHash.slice(0, 8)}…)`, "success");
+      toast(`+${(n * POLLEN_PER_NEAR).toFixed(0)} пыльцы (tx ${txHash.slice(0, 8)}…)`, "success");
       onClose();
     } catch (e: any) {
       toast(`Ошибка: ${e.message ?? e}`, "error");
@@ -32,7 +32,7 @@ export function PollenTopupModal({ onClose }: { onClose: () => void }) {
       <div className="bg-brown-800 border-2 border-yellow-600 p-4 w-[300px]" onClick={(e) => e.stopPropagation()}>
         <h2 className="font-game text-[12px] text-yellow-300 mb-3 text-center">Пополнить пыльцу</h2>
         <div className="font-game text-[8px] text-white/60 mb-2 text-center">
-          1 NEAR = 1 пыльца
+          1 NEAR = {POLLEN_PER_NEAR} пыльцы
         </div>
         <input
           type="number"
