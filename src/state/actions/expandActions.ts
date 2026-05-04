@@ -114,7 +114,7 @@ export function completeExpansion(state: GameState, now: number): GameState {
   const flowerGate = playerLevel >= 13;
 
   // 2x2 objects FIRST (need contiguous space) — trees, fruit_patches, greenhouse
-  for (let i = 0; i < exp.adds.trees; i++) {
+  for (let i = 0; i < (exp.adds.trees ?? 0); i++) {
     place2x2({ type: "tree", hitsLeft: -1, lastHarvest: 0 });
   }
   if (fruitGate) {

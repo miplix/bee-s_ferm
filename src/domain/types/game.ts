@@ -33,6 +33,7 @@ export interface Cell {
   fruitPlantedAt?: number | null;
   fruitHarvestsLeft?: number | null;
   lastFruitHarvest?: number | null;
+  fruitStump?: boolean;             // true after final harvest until cut down with axe
   // flower bed
   flowerId?: FlowerId | null;
   flowerPlantedAt?: number | null;

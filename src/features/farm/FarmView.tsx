@@ -544,8 +544,8 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
     const harvestsLeft = cell.fruitHarvestsLeft ?? 0;
     const is2x2 = (cell.w ?? 1) >= 2;
     const sz = is2x2 ? 2 : 1;
-    const fruitImg = fruitDef ? fruitStageSrc(fruitDef.id, !!growing, prog, ready, harvestsLeft) : (harvestsLeft === 0 && cell.fruitId === null ? "/stages/fruit_stump.png" : "/plot/fruit_patch_empty.png");
-    const isStump = !growing && harvestsLeft === 0;
+    const isStump = !growing && cell.fruitId == null && cell.fruitHarvestsLeft === 0;
+    const fruitImg = fruitStageSrc(fruitDef?.id ?? "", !!growing, prog, ready, isStump ? 0 : harvestsLeft);
     return (
       <div onClick={onClick}
         {...hoverHandlers}
