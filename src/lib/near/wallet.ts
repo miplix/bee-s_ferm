@@ -4,9 +4,16 @@ import SignClient from "@walletconnect/sign-client";
 // Public WalletConnect Project ID (used by hot-connector example).
 const WC_PROJECT_ID = "1292473190ce7eb75c9de67e15aaad99";
 
-// Treasury account that receives Pollen/VIP payments.
-// Configurable via env var; defaults to placeholder.
-export const TREASURY_ID = (import.meta.env.VITE_NEAR_TREASURY_ID as string) || "bee-farm.near";
+// Treasury account that receives VIP NEAR payments
+export const TREASURY_ID = (import.meta.env.VITE_NEAR_TREASURY_ID as string) || "darai_drop.near";
+
+// Pollen FT contract (NEP-141) and recipient
+export const POLLEN_TOKEN_CONTRACT = "pollen.tkn.near";
+export const POLLEN_RECIPIENT = "darai_drop.near";
+export const POLLEN_TOKEN_DECIMALS = parseInt(
+  (import.meta.env.VITE_POLLEN_TOKEN_DECIMALS as string) || "18",
+  10
+);
 
 const YOCTO = 10n ** 24n;
 function nearToYocto(near: number): string {
@@ -119,9 +126,50 @@ export async function sendNear(amountNear: number, memo?: string): Promise<strin
     ],
   } as any);
 
-  // hot-connector returns FinalExecutionOutcome; tx_hash is on transaction.hash
   const txHash = result?.transaction?.hash || result?.transaction_outcome?.id || "";
   if (!txHash) throw new Error("Транзакция не подтверждена");
   void memo;
+  return txHash;
+}
+
+/** Convert human number → token base units string (10^decimals). */
+function toTokenUnits(amount: number, decimals: number): string {
+  const [whole, frac = ""] = amount.toFixed(decimals).split(".");
+  const padded = (frac + "0".repeat(decimals)).slice(0, decimals);
+  return (BigInt(whole) * (10n ** BigInt(decimals)) + BigInt(padded)).toString();
+}
+
+/**
+ * Send NEP-141 fungible tokens (pollen.tkn.near) → POLLEN_RECIPIENT.
+ * Returns tx hash. Requires 1 yoctoNEAR attached_deposit per NEP-141 standard.
+ */
+export async function sendPollenToken(amount: number): Promise<string> {
+  if (!_account) throw new Error("Кошелёк не подключён");
+  const wallet = _wallet ?? await getConnector().wallet();
+  if (!wallet) throw new Error("Кошелёк недоступен");
+
+  const tokenAmount = toTokenUnits(amount, POLLEN_TOKEN_DECIMALS);
+
+  const result: any = await wallet.signAndSendTransaction({
+    receiverId: POLLEN_TOKEN_CONTRACT,
+    actions: [
+      {
+        type: "FunctionCall",
+        params: {
+          methodName: "ft_transfer",
+          args: {
+            receiver_id: POLLEN_RECIPIENT,
+            amount: tokenAmount,
+            memo: "bee-farm pollen topup",
+          },
+          gas: "30000000000000",  // 30 Tgas
+          deposit: "1",            // 1 yoctoNEAR (NEP-141 requirement)
+        },
+      },
+    ],
+  } as any);
+
+  const txHash = result?.transaction?.hash || result?.transaction_outcome?.id || "";
+  if (!txHash) throw new Error("Транзакция не подтверждена");
   return txHash;
 }

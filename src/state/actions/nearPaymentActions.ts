@@ -1,22 +1,16 @@
 import type { GameState } from "../../domain/types/game";
 
 /**
- * Pollen-per-NEAR rate. Configurable via env. Default placeholder — нужно задать
- * VITE_POLLEN_PER_NEAR на Vercel чтобы заработала покупка с твоей экономикой.
+ * Credit in-game pollen 1:1 from pollen.tkn.near token transfer.
+ * txHash must be unique (replay-guard).
  */
-export const POLLEN_PER_NEAR = parseFloat(
-  (import.meta.env.VITE_POLLEN_PER_NEAR as string) || "100"
-);
-
-/** Credit pollen at POLLEN_PER_NEAR rate from a verified NEAR tx. */
-export function creditPollen(state: GameState, amountNear: number, txHash: string): GameState {
+export function creditPollen(state: GameState, amountTokens: number, txHash: string): GameState {
   const processed = state.processedTxHashes ?? [];
   if (processed.includes(txHash)) return state;
 
-  const pollenAmount = amountNear * POLLEN_PER_NEAR;
   return {
     ...state,
-    pollen: parseFloat(((state.pollen ?? 0) + pollenAmount).toFixed(4)),
+    pollen: parseFloat(((state.pollen ?? 0) + amountTokens).toFixed(4)),
     processedTxHashes: [...processed, txHash].slice(-200),
     lastMeaningfulActivity: Date.now(),
   };
