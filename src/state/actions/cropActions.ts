@@ -10,6 +10,7 @@ import { skillEffectsToBoosts, aggregateBoosts, applyBoostWithSub, applyBoost } 
 import { mulberry32 } from "../../domain/rng/prng";
 import { buildSeed } from "../../domain/rng/seed";
 import { rollCropMutant } from "../../domain/mutants/mutants";
+import { pollenProratedMultiplier } from "./pollenBoostActions";
 
 /** Plant a crop on a plot cell. Consumes 1 seed from inventory. */
 export function plant(
@@ -85,6 +86,16 @@ export function harvest(
     harvestAmount += 0.2;
   }
 
+  // Pollen boost: prorated by fraction of grow time spent under boost
+  const pollenMult = pollenProratedMultiplier(
+    cell.plantedAt!,
+    growMs,
+    cell.pollenBoostStartedAt,
+    cell.pollenBoostUntil,
+    now,
+  );
+  harvestAmount = harvestAmount * pollenMult;
+
   const finalAmount = Math.floor(harvestAmount);
 
   const cells = { ...state.cells };
@@ -95,6 +106,9 @@ export function harvest(
     plantedAt: null,
     effectiveGrowMs: null,
     fertilizerId: null,
+    // Boost cleared on harvest (each plant is fresh)
+    pollenBoostUntil: null,
+    pollenBoostStartedAt: null,
   };
 
   const inv = { ...state.inventory };

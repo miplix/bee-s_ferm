@@ -34,6 +34,10 @@ export interface Cell {
   fruitHarvestsLeft?: number | null;
   lastFruitHarvest?: number | null;
   fruitStump?: boolean;             // true after final harvest until cut down with axe
+
+  // Pollen boost (×2 yield while active, prorated at harvest)
+  pollenBoostUntil?: number | null;     // unix ms when boost expires
+  pollenBoostStartedAt?: number | null; // unix ms when applied
   // flower bed
   flowerId?: FlowerId | null;
   flowerPlantedAt?: number | null;

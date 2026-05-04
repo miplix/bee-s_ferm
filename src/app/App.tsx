@@ -9,6 +9,7 @@ import { WelcomeScreen } from "../features/panels/WelcomeScreen";
 import { Toaster } from "../features/shared/Toaster";
 import { LoginGate } from "../features/auth/LoginGate";
 import { PendingPlacementsBar } from "../features/farm/PendingPlacementsBar";
+import { PollenBoostButton } from "../features/farm/PollenBoostButton";
 import { usePassiveTick } from "../hooks/usePassiveTick";
 import { useStore } from "../state/store";
 
@@ -35,6 +36,7 @@ function GameRoot() {
         <Quickbar />
         <PanelHost />
         <PendingPlacementsBar />
+        <PollenBoostButton />
         <WelcomeScreen />
         <Toaster />
       </div>

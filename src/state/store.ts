@@ -31,6 +31,7 @@ import * as tradingAct from "./actions/tradingActions";
 import * as factionAct from "./actions/factionActions";
 import * as compostAct from "./actions/compostActions";
 import { placePending } from "./actions/placementActions";
+import { applyPollenBoost, POLLEN_COST } from "./actions/pollenBoostActions";
 import { sfx } from "../lib/sound";
 import { toast } from "./toastStore";
 import { getCropDef, ISLAND_ORDER } from "../data/crops.data";
@@ -169,6 +170,11 @@ export interface StoreActions {
   startPlacement(type: string): void;
   cancelPlacement(): void;
   placePendingItem(cx: number, cy: number): void;
+  // Pollen boost mode
+  pollenBoostMode: boolean;
+  togglePollenBoost(): void;
+  applyPollenBoost(cx: number, cy: number): void;
+  buyPollen(amount: number): void;
   cancelMove(): void;
 
   // Grid click (dispatches correct action based on cell type + selected tool)
@@ -555,6 +561,37 @@ export const useStore = create<Store>()(
           return { ...next, placementType: remaining > 0 ? s.placementType : null };
         }),
 
+      // --- Pollen boost ---
+      pollenBoostMode: false as boolean,
+      togglePollenBoost: () => set((s) => ({ pollenBoostMode: !s.pollenBoostMode, placementType: null, moveMode: false })),
+      applyPollenBoost: (cx, cy) =>
+        set((s) => {
+          const next = applyPollenBoost(s, cx, cy, Date.now());
+          if (next === s) {
+            const cell = s.cells[`${cx},${cy}`];
+            const realCell = cell?.parentKey ? s.cells[cell.parentKey] : cell;
+            const cost = realCell ? POLLEN_COST[realCell.type] : null;
+            if (!realCell) toast("Здесь нечего удобрять", "error");
+            else if (cost == null) toast("Эту клетку нельзя удобрять пыльцой", "error");
+            else if ((s.pollen ?? 0) < cost) toast(`Не хватает пыльцы (нужно ${cost})`, "error");
+            else toast("Не получилось", "error");
+            return s;
+          }
+          sfx.plant();
+          return next;
+        }),
+      buyPollen: (amount) =>
+        set((s) => {
+          // 100 pollen = 50 coins → 0.5 coins/pollen
+          const cost = amount * 0.5;
+          if (s.coins < cost - 0.001) { toast("Не хватает монет", "error"); return s; }
+          return {
+            ...s,
+            coins: parseFloat((s.coins - cost).toFixed(4)),
+            pollen: parseFloat(((s.pollen ?? 0) + amount).toFixed(4)),
+          };
+        }),
+
       // --- Move ---
       toggleMoveMode: () =>
         set((s) => ({ moveMode: !s.moveMode, moveSource: null })),
@@ -570,6 +607,12 @@ export const useStore = create<Store>()(
         // Resolve child cell to parent (for 2x2 objects)
         const rawCell = s.cells[key];
         if (rawCell?.parentKey) key = rawCell.parentKey;
+
+        // Pollen boost mode
+        if (s.pollenBoostMode) {
+          get().applyPollenBoost(cx, cy);
+          return;
+        }
 
         // Placement mode handling (overflow inventory)
         if (s.placementType) {

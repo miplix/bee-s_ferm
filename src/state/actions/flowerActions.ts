@@ -4,6 +4,7 @@ import type { FlowerId } from "../../domain/types/ids";
 import { getFlowerDef } from "../../data/flowers.data";
 import { getLevel } from "../../domain/level/level";
 import { elapsed } from "../../domain/time/time";
+import { pollenProratedMultiplier } from "./pollenBoostActions";
 
 /** Plant a flower on a flower_bed cell. Consumes 1 flower seed. */
 export function plantFlower(
@@ -59,10 +60,20 @@ export function harvestFlower(
     ...cell,
     flowerId: null,
     flowerPlantedAt: null,
+    pollenBoostUntil: null,
+    pollenBoostStartedAt: null,
   };
 
   const inv = { ...state.inventory };
-  inv[cell.flowerId] = (inv[cell.flowerId] ?? 0) + 1;
+  // Pollen boost prorated
+  const pollenMult = pollenProratedMultiplier(
+    cell.flowerPlantedAt,
+    flower.growMs,
+    cell.pollenBoostStartedAt,
+    cell.pollenBoostUntil,
+    now,
+  );
+  inv[cell.flowerId] = (inv[cell.flowerId] ?? 0) + Math.floor(1 * pollenMult);
 
   return {
     ...state,

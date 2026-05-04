@@ -4,6 +4,7 @@ import type { FruitId } from "../../domain/types/ids";
 import { getFruitDef } from "../../data/fruits.data";
 import { getLevel } from "../../domain/level/level";
 import { elapsed } from "../../domain/time/time";
+import { pollenProratedMultiplier } from "./pollenBoostActions";
 import { mulberry32, randInt } from "../../domain/rng/prng";
 
 /**
@@ -81,7 +82,16 @@ export function harvestFruit(
 
   const cells = { ...state.cells };
   const inv = { ...state.inventory };
-  inv[cell.fruitId] = (inv[cell.fruitId] ?? 0) + 1;
+  // Pollen boost prorated for this harvest cycle (refTime → now)
+  const pollenMult = pollenProratedMultiplier(
+    refTime,
+    fruit.growMs,
+    cell.pollenBoostStartedAt,
+    cell.pollenBoostUntil,
+    now,
+  );
+  const yieldAmount = Math.floor(1 * pollenMult);
+  inv[cell.fruitId] = (inv[cell.fruitId] ?? 0) + yieldAmount;
 
   if (harvestsLeft <= 0) {
     // Bush depleted — leave as stump until player cuts it (cutSapling)

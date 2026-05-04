@@ -531,11 +531,15 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
       icon = "➕";
     }
 
+    const boosted = (cell.pollenBoostUntil ?? 0) > now;
     return (
       <div onClick={onClick}
         className={`relative flex flex-col items-center justify-center cursor-pointer
           ${ready ? "animate-pulse" : ""} ${moveOverlay}`}
-        style={{ width: CELL_SIZE, height: CELL_SIZE }}>
+        style={{
+          width: CELL_SIZE, height: CELL_SIZE,
+          boxShadow: boosted ? "inset 0 0 8px 2px rgba(255,200,50,0.7)" : undefined,
+        }}>
         {/* Empty plot dirt patch — only when nothing growing */}
         {!growing && (
           <img
