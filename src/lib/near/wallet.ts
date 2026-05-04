@@ -1,7 +1,7 @@
 import { NearConnector, NearWalletBase } from "@hot-labs/near-connect";
 import SignClient from "@walletconnect/sign-client";
 
-const NETWORK = (import.meta.env.VITE_NEAR_NETWORK as "mainnet" | "testnet") || "mainnet";
+const NETWORK = "mainnet" as const;  // всегда mainnet
 const WALLETCONNECT_PROJECT_ID = (import.meta.env.VITE_WALLETCONNECT_PROJECT_ID as string) || "";
 
 let _connector: NearConnector | null = null;
@@ -39,9 +39,7 @@ export function getConnector(): NearConnector {
   _connector = new NearConnector({
     network: NETWORK,
     walletConnect,
-    providers: NETWORK === "mainnet"
-      ? { mainnet: ["https://relmn.aurora.dev"] }
-      : undefined,
+    providers: { mainnet: ["https://relmn.aurora.dev"] },
   });
 
   _connector.on("wallet:signIn", async (t: any) => {
