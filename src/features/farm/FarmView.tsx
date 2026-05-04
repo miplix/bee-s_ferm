@@ -96,6 +96,42 @@ export function FarmView() {
     });
   }, []);
 
+  // Touch state for pinch-zoom + single-finger pan
+  const touchState = useRef<{ pinchDist: number | null; touch: { x: number; y: number } | null }>({ pinchDist: null, touch: null });
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      touchState.current.pinchDist = Math.hypot(dx, dy);
+    } else if (e.touches.length === 1 && e.target === e.currentTarget) {
+      touchState.current.touch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      panOrigin.current = { ...pan };
+    }
+  }, [pan]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length === 2 && touchState.current.pinchDist !== null) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.hypot(dx, dy);
+      const delta = dist / touchState.current.pinchDist;
+      setZoom((z) => Math.min(2, Math.max(0.4, z * delta)));
+      touchState.current.pinchDist = dist;
+      e.preventDefault();
+    } else if (e.touches.length === 1 && touchState.current.touch) {
+      setPan({
+        x: panOrigin.current.x + (e.touches[0].clientX - touchState.current.touch.x),
+        y: panOrigin.current.y + (e.touches[0].clientY - touchState.current.touch.y),
+      });
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    touchState.current.pinchDist = null;
+    touchState.current.touch = null;
+  }, []);
+
   const handleMouseUp = useCallback(() => {
     isPanning.current = false;
   }, []);
@@ -169,12 +205,15 @@ export function FarmView() {
   return (
     <div
       className="flex-1 overflow-hidden relative cursor-grab active:cursor-grabbing"
-      style={{ background: islandBgGradient[island] ?? islandBgGradient.basic }}
+      style={{ background: islandBgGradient[island] ?? islandBgGradient.basic, touchAction: "none" }}
       onWheel={handleWheel}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
     >
       {/* Background ocean/desert/lava — zooms WITH island, like real surroundings */}
       {bgImg && (

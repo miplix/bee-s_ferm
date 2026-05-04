@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getSupabase, isCloudEnabled } from "../../lib/supabase/client";
-import { pullSave } from "../../lib/supabase/sync";
+import { pullSave, schedulePush } from "../../lib/supabase/sync";
 import { useStore } from "../../state/store";
 import { PixelButton } from "../shared/PixelButton";
 
@@ -31,7 +31,30 @@ export function AuthScreen() {
         // Try to pull cloud save into local state on login
         const cloud = await pullSave();
         if (cloud) {
-          useStore.setState(cloud as any);
+          const localState = useStore.getState() as any;
+          const localUpdated = localState.lastMeaningfulActivity ?? 0;
+          const cloudUpdated = new Date(cloud.updatedAt).getTime();
+          // If both local and cloud have meaningful state and they differ significantly,
+          // ask user which one to keep
+          const localHasProgress = (localState.xp ?? 0) > 0 || (localState.coins ?? 0) > 0;
+          const driftMs = Math.abs(localUpdated - cloudUpdated);
+          if (localHasProgress && driftMs > 60_000) {
+            const useCloud = confirm(
+              `Найдены два разных сейва.\n\n` +
+              `Облако: ${new Date(cloud.updatedAt).toLocaleString()}\n` +
+              `Локально: ${new Date(localUpdated).toLocaleString()}\n\n` +
+              `OK — загрузить облачный (потеряешь локальные изменения)\n` +
+              `Cancel — оставить локальный (запушится в облако)`
+            );
+            if (useCloud) {
+              useStore.setState(cloud.state as any);
+            } else {
+              schedulePush(localState, 100); // push local immediately
+            }
+          } else {
+            // No conflict — use cloud
+            useStore.setState(cloud.state as any);
+          }
         }
       } else {
         setMode("guest");

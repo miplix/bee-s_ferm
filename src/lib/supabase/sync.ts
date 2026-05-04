@@ -30,7 +30,7 @@ export async function pushSave(state: GameState): Promise<void> {
 }
 
 /** Pull save from cloud. Returns null if no auth, no cloud, or no save. */
-export async function pullSave(): Promise<GameState | null> {
+export async function pullSave(): Promise<{ state: GameState; updatedAt: string; deviceId: string | null } | null> {
   const sb = getSupabase();
   if (!sb) return null;
   const { data: { user } } = await sb.auth.getUser();
@@ -38,12 +38,12 @@ export async function pullSave(): Promise<GameState | null> {
 
   const { data, error } = await sb
     .from("saves")
-    .select("state, schema_version, updated_at")
+    .select("state, schema_version, updated_at, device_id")
     .eq("user_id", user.id)
     .maybeSingle();
 
   if (error || !data) return null;
-  return data.state as GameState;
+  return { state: data.state as GameState, updatedAt: data.updated_at, deviceId: data.device_id };
 }
 
 /** Debounced push helper. */

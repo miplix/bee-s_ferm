@@ -113,28 +113,30 @@ export function completeExpansion(state: GameState, now: number): GameState {
   const fruitGate = playerLevel >= 12;
   const flowerGate = playerLevel >= 13;
 
-  // 2x2 objects FIRST (need contiguous space) — trees, fruit_patches, greenhouse
-  for (let i = 0; i < (exp.adds.trees ?? 0); i++) {
-    place2x2({ type: "tree", hitsLeft: -1, lastHarvest: 0 });
-  }
-  if (fruitGate) {
-    for (let i = 0; i < (exp.adds.fruit_patches ?? 0); i++) place2x2({ type: "fruit_patch" });
-  }
-  for (let i = 0; i < (exp.adds.greenhouse ?? 0); i++) place2x2({ type: "greenhouse" });
+  // Items that don't fit go to pendingPlacements (player places later)
+  const overflowMap: Record<string, number> = { ...(state.pendingPlacements ?? {}) };
+  const overflow = (type: string) => { overflowMap[type] = (overflowMap[type] ?? 0) + 1; };
+  const tryPlace = (cell: Cell, big: boolean) => {
+    const ok = big ? place2x2(cell) : place1x1(cell);
+    if (!ok) overflow(cell.type);
+  };
 
-  // 1x1 objects after (fill remaining cells)
-  for (let i = 0; i < exp.adds.plots; i++) place1x1({ type: "plot" });
-  for (let i = 0; i < (exp.adds.rocks ?? 0); i++) place1x1({ type: "rock", hitsLeft: RESOURCE_NODES.rock.maxNodes, lastHarvest: 0 });
-  for (let i = 0; i < (exp.adds.iron ?? 0); i++) place1x1({ type: "iron", hitsLeft: RESOURCE_NODES.iron.maxNodes, lastHarvest: 0 });
-  for (let i = 0; i < (exp.adds.gold ?? 0); i++) place1x1({ type: "gold", hitsLeft: RESOURCE_NODES.gold.maxNodes, lastHarvest: 0 });
-  for (let i = 0; i < (exp.adds.crimstone ?? 0); i++) place1x1({ type: "crimstone", hitsLeft: RESOURCE_NODES.crimstone.maxNodes, lastHarvest: 0 });
-  if (flowerGate) {
-    for (let i = 0; i < (exp.adds.flower_beds ?? 0); i++) place1x1({ type: "flower_bed" });
-  }
-  for (let i = 0; i < (exp.adds.oil_reserve ?? 0); i++) place1x1({ type: "oil_reserve", hitsLeft: RESOURCE_NODES.oil_reserve.maxNodes, lastHarvest: 0 });
-  for (let i = 0; i < (exp.adds.obsidian_rock ?? 0); i++) place1x1({ type: "obsidian_rock", hitsLeft: RESOURCE_NODES.obsidian_rock.maxNodes, lastHarvest: 0 });
-  for (let i = 0; i < (exp.adds.sunstone_rock ?? 0); i++) place1x1({ type: "sunstone_rock", hitsLeft: RESOURCE_NODES.sunstone_rock.maxNodes, lastHarvest: 0 });
-  for (let i = 0; i < (exp.adds.lava_pit ?? 0); i++) place1x1({ type: "lava_pit", hitsLeft: -1, lastHarvest: 0 });
+  // 2x2 objects FIRST (need contiguous space) — trees, fruit_patches, greenhouse
+  for (let i = 0; i < (exp.adds.trees ?? 0); i++) tryPlace({ type: "tree", hitsLeft: -1, lastHarvest: 0 }, true);
+  if (fruitGate) for (let i = 0; i < (exp.adds.fruit_patches ?? 0); i++) tryPlace({ type: "fruit_patch" }, true);
+  for (let i = 0; i < (exp.adds.greenhouse ?? 0); i++) tryPlace({ type: "greenhouse" }, true);
+
+  // 1x1 objects after
+  for (let i = 0; i < exp.adds.plots; i++) tryPlace({ type: "plot" }, false);
+  for (let i = 0; i < (exp.adds.rocks ?? 0); i++) tryPlace({ type: "rock", hitsLeft: RESOURCE_NODES.rock.maxNodes, lastHarvest: 0 }, false);
+  for (let i = 0; i < (exp.adds.iron ?? 0); i++) tryPlace({ type: "iron", hitsLeft: RESOURCE_NODES.iron.maxNodes, lastHarvest: 0 }, false);
+  for (let i = 0; i < (exp.adds.gold ?? 0); i++) tryPlace({ type: "gold", hitsLeft: RESOURCE_NODES.gold.maxNodes, lastHarvest: 0 }, false);
+  for (let i = 0; i < (exp.adds.crimstone ?? 0); i++) tryPlace({ type: "crimstone", hitsLeft: RESOURCE_NODES.crimstone.maxNodes, lastHarvest: 0 }, false);
+  if (flowerGate) for (let i = 0; i < (exp.adds.flower_beds ?? 0); i++) tryPlace({ type: "flower_bed" }, false);
+  for (let i = 0; i < (exp.adds.oil_reserve ?? 0); i++) tryPlace({ type: "oil_reserve", hitsLeft: RESOURCE_NODES.oil_reserve.maxNodes, lastHarvest: 0 }, false);
+  for (let i = 0; i < (exp.adds.obsidian_rock ?? 0); i++) tryPlace({ type: "obsidian_rock", hitsLeft: RESOURCE_NODES.obsidian_rock.maxNodes, lastHarvest: 0 }, false);
+  for (let i = 0; i < (exp.adds.sunstone_rock ?? 0); i++) tryPlace({ type: "sunstone_rock", hitsLeft: RESOURCE_NODES.sunstone_rock.maxNodes, lastHarvest: 0 }, false);
+  for (let i = 0; i < (exp.adds.lava_pit ?? 0); i++) tryPlace({ type: "lava_pit", hitsLeft: -1, lastHarvest: 0 }, false);
 
   // Refresh ALL existing resource nodes — reset cooldowns + restore exhausted finite nodes.
   // Expansion reward: every tree/rock/ore on already-unlocked blocks becomes ready to gather again.
@@ -163,6 +165,7 @@ export function completeExpansion(state: GameState, now: number): GameState {
     cells,
     expansion: pending.expansionIndex + 1,
     pendingExpansion: null,
+    pendingPlacements: overflowMap,
     lastMeaningfulActivity: now,
   };
 }

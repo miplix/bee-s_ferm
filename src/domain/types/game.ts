@@ -263,10 +263,14 @@ export interface GameState {
   // trading marketplace
   tradeListings: TradeListing[];
 
-  // factions & pets
+  // factions
   faction: string | null;
-  pets: string[];
-  petStates: Record<string, PetState>;
+  pets: string[];                      // legacy (deprecated, kept for save migration)
+  petStates: Record<string, PetState>; // legacy (deprecated)
+
+  // Items waiting to be placed on the farm (overflow from expansions)
+  // Each entry = type of cell that needs placement, count.
+  pendingPlacements: Record<string, number>;
 
   // anti-bot
   lastMeaningfulActivity: number;
@@ -410,6 +414,7 @@ export function createInitialState(): GameState {
     faction: null,
     pets: [],
     petStates: {},
+    pendingPlacements: {},
 
     lastMeaningfulActivity: now,
     nearAccount: null,

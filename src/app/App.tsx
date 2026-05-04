@@ -8,6 +8,8 @@ import { ErrorBoundary } from "../features/shared/ErrorBoundary";
 import { WelcomeScreen } from "../features/panels/WelcomeScreen";
 import { Toaster } from "../features/shared/Toaster";
 import { AuthScreen } from "../features/auth/AuthScreen";
+import { PendingPlacementsBar } from "../features/farm/PendingPlacementsBar";
+import { NearWalletButton } from "../features/near/NearWalletButton";
 import { usePassiveTick } from "../hooks/usePassiveTick";
 import { useStore } from "../state/store";
 
@@ -32,6 +34,8 @@ function GameRoot() {
       <FarmView />
       <Quickbar />
       <PanelHost />
+      <PendingPlacementsBar />
+      <NearWalletButton />
       <AuthScreen />
       <WelcomeScreen />
       <Toaster />

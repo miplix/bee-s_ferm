@@ -29,8 +29,9 @@ import * as dailyRewardAct from "./actions/dailyRewardActions";
 import * as cropMachineAct from "./actions/cropMachineActions";
 import * as tradingAct from "./actions/tradingActions";
 import * as factionAct from "./actions/factionActions";
-import * as petAct from "./actions/petActions";
 import * as compostAct from "./actions/compostActions";
+import { placePending } from "./actions/placementActions";
+import { sfx } from "../lib/sound";
 import { toast } from "./toastStore";
 import { getCropDef, ISLAND_ORDER } from "../data/crops.data";
 import { getLevel } from "../domain/level/level";
@@ -154,9 +155,7 @@ export interface StoreActions {
   joinFaction(factionId: string): void;
 
   // Pets
-  adoptPet(petId: string): void;
-  napPet(petId: string): void;
-  feedPet(petId: string): void;
+  // pets removed (not in original SFL design)
 
   // Composting
   startCompost(composterId: string): void;
@@ -165,6 +164,11 @@ export interface StoreActions {
 
   // Move
   toggleMoveMode(): void;
+  // Pending placements (overflow from expansion)
+  placementType: string | null;
+  startPlacement(type: string): void;
+  cancelPlacement(): void;
+  placePendingItem(cx: number, cy: number): void;
   cancelMove(): void;
 
   // Grid click (dispatches correct action based on cell type + selected tool)
@@ -221,6 +225,7 @@ export const useStore = create<Store>()(
             toast("Нельзя посадить", "error");
             return s;
           }
+          sfx.plant();
           return { ...next, quickbar: pushToQuickbar(next.quickbar, `${cropId}_seed`) };
         }),
       harvest: (x, y) =>
@@ -229,6 +234,7 @@ export const useStore = create<Store>()(
           const cropId = s.cells[key]?.cropId;
           const next = cropAct.harvest(s, x, y, Date.now());
           if (next === s) { toast("Урожай ещё не готов", "error"); return s; }
+          sfx.harvest();
           return { ...next, quickbar: cropId ? pushToQuickbar(next.quickbar, cropId) : next.quickbar };
         }),
 
@@ -300,6 +306,9 @@ export const useStore = create<Store>()(
             toast("Нельзя добыть", "error");
             return s;
           }
+          // Tree → chop sound, ore → mine sound
+          if (s.cells[`${x},${y}`]?.type === "tree" || s.cells[s.cells[`${x},${y}`]?.parentKey ?? ""]?.type === "tree") sfx.chop();
+          else sfx.mine();
           return next;
         }),
 
@@ -320,6 +329,7 @@ export const useStore = create<Store>()(
             else toast("Не хватает места, ресурсов или уровня", "error");
             return s;
           }
+          sfx.build();
           return next;
         }),
       upgradeBuilding: (buildingId) =>
@@ -353,7 +363,11 @@ export const useStore = create<Store>()(
           return next;
         }),
       completeExpansion: () =>
-        set((s) => expAct.completeExpansion(s, Date.now())),
+        set((s) => {
+          const next = expAct.completeExpansion(s, Date.now());
+          if (next !== s) sfx.expand();
+          return next;
+        }),
       travelToSpring: () =>
         set((s) => expAct.travelToSpring(s, Date.now())),
       travelToDesert: () =>
@@ -456,7 +470,11 @@ export const useStore = create<Store>()(
 
       // --- Daily Reward ---
       claimDailyReward: () =>
-        set((s) => dailyRewardAct.claimDailyReward(s, Date.now())),
+        set((s) => {
+          const next = dailyRewardAct.claimDailyReward(s, Date.now());
+          if (next !== s) sfx.reward();
+          return next;
+        }),
 
       // --- Crop Machine ---
       buildCropMachine: () =>
@@ -523,24 +541,18 @@ export const useStore = create<Store>()(
           return next;
         }),
 
-      adoptPet: (petId) =>
+      // --- Pending placements (overflow inventory) ---
+      placementType: null as string | null,
+      startPlacement: (type) => set({ placementType: type, moveMode: false }),
+      cancelPlacement: () => set({ placementType: null }),
+      placePendingItem: (cx, cy) =>
         set((s) => {
-          const next = petAct.adoptPet(s, petId, Date.now());
-          if (next === s) {
-            if (!s.buildings.includes("pet_house" as any)) toast("Сначала построй Дом Питомцев", "error");
-            else if (s.pets.includes(petId)) toast("Этот питомец уже усыновлён", "error");
-            else toast("Не получилось усыновить", "error");
-            return s;
-          }
-          return next;
-        }),
-      napPet: (petId) =>
-        set((s) => petAct.napPet(s, petId, Date.now())),
-      feedPet: (petId) =>
-        set((s) => {
-          const next = petAct.feedPet(s, petId, Date.now());
-          if (next === s) toast("Нужна пшеница 🌾 для кормления питомца", "error");
-          return next;
+          if (!s.placementType) return s;
+          const next = placePending(s, s.placementType, cx, cy);
+          if (next === s) { toast("Эта клетка занята или нужно 2x2 свободного места", "error"); return s; }
+          // exit placement mode if no more of that type
+          const remaining = next.pendingPlacements?.[s.placementType] ?? 0;
+          return { ...next, placementType: remaining > 0 ? s.placementType : null };
         }),
 
       // --- Move ---
@@ -558,6 +570,12 @@ export const useStore = create<Store>()(
         // Resolve child cell to parent (for 2x2 objects)
         const rawCell = s.cells[key];
         if (rawCell?.parentKey) key = rawCell.parentKey;
+
+        // Placement mode handling (overflow inventory)
+        if (s.placementType) {
+          get().placePendingItem(cx, cy);
+          return;
+        }
 
         // Move mode handling
         if (s.moveMode) {
@@ -733,7 +751,7 @@ export const useStore = create<Store>()(
           claimDailyReward,
           buildCropMachine, addToQueue, collectFromQueue, refillOil,
           createListing: _createListing, cancelListing: _cancelListing, buyListing: _buyListing,
-          joinFaction, adoptPet, napPet, feedPet,
+          joinFaction,
           toggleMoveMode, cancelMove,
           startExpansion, completeExpansion, travelToSpring, travelToDesert, travelToVolcano,
           resetGame, touchActivity, ...data } = state;

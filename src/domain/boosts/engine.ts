@@ -6,7 +6,7 @@
 import type { BoostEffect as SkillBoostEffect } from "../../data/skills.data";
 import { getCollectibleDef, type CollectibleBoost } from "../../data/collectibles.data";
 import { getFactionDef } from "../../data/factions.data";
-import { getPetDef } from "../../data/pets.data";
+// pets removed
 
 // ── Types ──
 
@@ -235,17 +235,9 @@ export function factionToBoostEffects(factionId: string | null): BoostEffect[] {
 
 // ── Pet boosts ──
 
-/**
- * Convert owned pets into generic BoostEffects.
- */
-export function petBoostsToEffects(petIds: string[]): BoostEffect[] {
-  const effects: BoostEffect[] = [];
-  for (const id of petIds) {
-    const def = getPetDef(id);
-    if (!def) continue;
-    effects.push({ type: def.boost.type, target: def.boost.target, value: def.boost.value });
-  }
-  return effects;
+/** Pets removed — stub returns empty effects. */
+export function petBoostsToEffects(_petIds: string[]): BoostEffect[] {
+  return [];
 }
 
 // ── Combined boost aggregation ──
