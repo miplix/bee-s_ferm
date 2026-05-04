@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { connectNear, getAccount, onAccount } from "../../lib/near/wallet";
+import { connectNear, getAccount, initNear, onAccount } from "../../lib/near/wallet";
 
 /**
  * Полноэкранный gate — пока NEAR-кошелёк не подключён, игра скрыта.
@@ -8,10 +8,28 @@ import { connectNear, getAccount, onAccount } from "../../lib/near/wallet";
 export function LoginGate({ children }: { children: React.ReactNode }) {
   const [account, setAccount] = useState(getAccount());
   const [busy, setBusy] = useState(false);
+  const [restoring, setRestoring] = useState(true);
 
-  useEffect(() => onAccount(setAccount), []);
+  useEffect(() => {
+    initNear();
+    const off = onAccount(setAccount);
+    // wait one tick for restore-attempt
+    const t = setTimeout(() => setRestoring(false), 1500);
+    return () => { off(); clearTimeout(t); };
+  }, []);
 
   if (account) return <>{children}</>;
+  if (restoring) {
+    return (
+      <div
+        className="fixed inset-0 z-[80] flex flex-col items-center justify-center"
+        style={{ background: "linear-gradient(180deg, #6dc3e0 0%, #4ea7d4 60%, #3a8bbf 100%)" }}
+      >
+        <div className="text-5xl mb-2">🐝</div>
+        <div className="font-game text-[10px] text-yellow-200">Загрузка...</div>
+      </div>
+    );
+  }
 
   const handleConnect = async () => {
     setBusy(true);

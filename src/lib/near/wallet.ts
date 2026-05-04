@@ -57,7 +57,26 @@ export function getConnector(): NearConnector {
     emit();
   });
 
+  // Restore previous session on init (auto-connect)
+  _connector.wallet().then(async (w) => {
+    if (!w) return;
+    _wallet = w;
+    const accs = await w.getAccounts();
+    if (accs && accs.length > 0) {
+      _account = { id: accs[0].accountId, network: "mainnet" };
+      emit();
+    }
+  }).catch(() => {});
+
   return _connector;
+}
+
+let _initialized = false;
+/** Trigger init (idempotent). Restores session from storage if any. */
+export function initNear() {
+  if (_initialized) return;
+  _initialized = true;
+  getConnector();
 }
 
 /** Open wallet selector and connect. */
