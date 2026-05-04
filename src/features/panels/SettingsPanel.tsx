@@ -4,6 +4,7 @@ import { PanelShell } from "./PanelShell";
 import { PixelButton } from "../shared/PixelButton";
 import { disconnectNear, getAccount, onAccount } from "../../lib/near/wallet";
 import { getSupabase, isCloudEnabled } from "../../lib/supabase/client";
+import { VipPurchaseModal } from "../near/VipPurchaseModal";
 
 export function SettingsPanel() {
   const [confirmReset, setConfirmReset] = useState(false);
@@ -15,6 +16,10 @@ export function SettingsPanel() {
   const coins = useStore((s) => s.coins);
   const [nearAcc, setNearAcc] = useState(getAccount());
   const [emailUser, setEmailUser] = useState<string | null>(null);
+  const [showVip, setShowVip] = useState(false);
+  const vipExpiresAt = useStore((s) => s.vipExpiresAt);
+  const now = Date.now();
+  const vipActive = !!vipExpiresAt && vipExpiresAt > now;
 
   useEffect(() => {
     const off = onAccount(setNearAcc);
@@ -70,6 +75,24 @@ export function SettingsPanel() {
           </div>
         </div>
 
+        {/* VIP */}
+        <div className="bg-brown-600 p-2 border border-black/20 space-y-1">
+          <p className="font-game text-[8px] text-yellow-300">💎 VIP</p>
+          <div className="font-game text-[7px] text-white/80">
+            {vipActive ? (
+              <p className="text-green-300">Активен до {new Date(vipExpiresAt!).toLocaleString()}</p>
+            ) : (
+              <p className="text-white/50">Не активен. +1 слот пчелы пока активен.</p>
+            )}
+          </div>
+          <button
+            onClick={() => setShowVip(true)}
+            className="font-game text-[7px] px-2 py-1 mt-1 border border-black bg-purple-700 text-yellow-200 hover:bg-purple-600"
+          >
+            {vipActive ? "Продлить" : "Купить VIP"}
+          </button>
+        </div>
+
         {/* Game info */}
         <div className="bg-brown-600 p-2 border border-black/20 space-y-1">
           <p className="font-game text-[8px] text-yellow-300">Состояние</p>
@@ -113,6 +136,7 @@ export function SettingsPanel() {
           )}
         </div>
       </div>
+      {showVip && <VipPurchaseModal onClose={() => setShowVip(false)} />}
     </PanelShell>
   );
 }

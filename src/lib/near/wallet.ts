@@ -2,9 +2,19 @@ import { NearConnector, NearWalletBase } from "@hot-labs/near-connect";
 import SignClient from "@walletconnect/sign-client";
 
 // Public WalletConnect Project ID (used by hot-connector example).
-// Можно оставить так — оплата за него не идёт, лимит generous.
-// Если будет проблема (rate limit), просто зарегистрируем свой на cloud.reown.com.
 const WC_PROJECT_ID = "1292473190ce7eb75c9de67e15aaad99";
+
+// Treasury account that receives Pollen/VIP payments.
+// Configurable via env var; defaults to placeholder.
+export const TREASURY_ID = (import.meta.env.VITE_NEAR_TREASURY_ID as string) || "bee-farm.near";
+
+const YOCTO = 10n ** 24n;
+function nearToYocto(near: number): string {
+  // Use string math to avoid float-precision issues
+  const [whole, frac = ""] = near.toFixed(24).split(".");
+  const padded = (frac + "0".repeat(24)).slice(0, 24);
+  return (BigInt(whole) * YOCTO + BigInt(padded)).toString();
+}
 
 let _connector: NearConnector | null = null;
 let _wallet: NearWalletBase | undefined;
@@ -87,4 +97,31 @@ export async function connectNear(): Promise<void> {
 /** Disconnect current wallet. */
 export async function disconnectNear(): Promise<void> {
   await getConnector().disconnect();
+}
+
+/**
+ * Send NEAR from connected account to TREASURY_ID.
+ * Returns tx hash on success. Throws if wallet not connected or user rejected.
+ */
+export async function sendNear(amountNear: number, memo?: string): Promise<string> {
+  if (!_account) throw new Error("Кошелёк не подключён");
+  const wallet = _wallet ?? await getConnector().wallet();
+  if (!wallet) throw new Error("Кошелёк недоступен");
+
+  const yoctoAmount = nearToYocto(amountNear);
+  const result: any = await wallet.signAndSendTransaction({
+    receiverId: TREASURY_ID,
+    actions: [
+      {
+        type: "Transfer",
+        params: { deposit: yoctoAmount },
+      },
+    ],
+  } as any);
+
+  // hot-connector returns FinalExecutionOutcome; tx_hash is on transaction.hash
+  const txHash = result?.transaction?.hash || result?.transaction_outcome?.id || "";
+  if (!txHash) throw new Error("Транзакция не подтверждена");
+  void memo;
+  return txHash;
 }

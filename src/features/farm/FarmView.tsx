@@ -59,9 +59,32 @@ export function FarmView() {
   const moveSource = useStore((s) => s.moveSource);
   const buildingLevels = useStore((s) => s.buildingLevels);
   const beehives = useStore((s) => s.beehives);
+  const vipExpiresAt = useStore((s) => s.vipExpiresAt);
   const seasonAnchor = useStore((s) => s.seasonAnchor);
   const currentSeason = island === "basic" ? "spring" : getCurrentSeason(Date.now(), seasonAnchor);
   const grassStyle = makeGrassStyle(island, currentSeason);
+
+  // Beehive slot calc (VIP-aware) — used to grey out hives beyond active limit
+  const _now = Date.now();
+  const _vipActive = !!(vipExpiresAt && vipExpiresAt > _now);
+  const activeBeehiveSlots = (() => {
+    // Inline import to avoid circular
+    const lvl = getLevel(xp);
+    if (island === "basic") return 0;
+    let slots: number;
+    if (lvl < 10) slots = 0;
+    else if (lvl < 15) slots = 1;
+    else if (lvl < 25) slots = 2;
+    else if (lvl < 30) slots = 3;
+    else if (lvl < 35) slots = 4;
+    else if (lvl < 40) slots = 5;
+    else if (lvl < 45) slots = 6;
+    else if (lvl < 50) slots = 7;
+    else if (lvl < 75) slots = 8;
+    else slots = 15;
+    if (_vipActive && slots > 0) slots += 1;
+    return slots;
+  })();
 
   const [showExpandPopup, setShowExpandPopup] = useState(false);
   const [hoveredParent, setHoveredParent] = useState<string | null>(null);
@@ -375,7 +398,8 @@ export function FarmView() {
                   onClick={() => clickCell(cx, cy)} selectedTool={selectedTool}
                   moveMode={moveMode} moveSource={moveSource}
                   hoveredParent={hoveredParent} setHoveredParent={setHoveredParent}
-                  buildingLevels={buildingLevels} beehives={beehives} />
+                  buildingLevels={buildingLevels} beehives={beehives}
+                  activeBeehiveSlots={activeBeehiveSlots} />
               </div>
             );
           }),
@@ -463,9 +487,10 @@ interface CellViewProps {
   setHoveredParent: (key: string | null) => void;
   buildingLevels: Record<string, number>;
   beehives: Array<{ level: number }>;
+  activeBeehiveSlots: number;
 }
 
-function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, hoveredParent, setHoveredParent, buildingLevels, beehives }: CellViewProps) {
+function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, hoveredParent, setHoveredParent, buildingLevels, beehives, activeBeehiveSlots }: CellViewProps) {
   const now = Date.now();
   const key = cellKey(cx, cy);
   const isSource = moveSource === key;
@@ -802,16 +827,23 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
     const bee = cell.beehiveIdx != null ? beehives[cell.beehiveIdx] : null;
     const lvl = bee?.level ?? 1;
     const hiveImg = beehiveSrc(lvl);
+    // Grey out if this hive is beyond active slot limit (VIP expired etc)
+    const isInactive = cell.beehiveIdx != null && cell.beehiveIdx >= activeBeehiveSlots;
     return (
       <div onClick={onClick}
-        className={`flex items-center justify-center cursor-pointer ${moveOverlay}`}
-        style={{ width: CELL_SIZE, height: CELL_SIZE }}>
+        className={`relative flex items-center justify-center cursor-pointer ${moveOverlay}`}
+        style={{ width: CELL_SIZE, height: CELL_SIZE }}
+        title={isInactive ? "Не активен: нужен VIP или повышение уровня" : undefined}
+      >
         <img
           src={hiveImg}
           alt=""
-          className="w-full h-full object-contain pointer-events-none"
+          className={`w-full h-full object-contain pointer-events-none ${isInactive ? "grayscale opacity-60" : ""}`}
           onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
         />
+        {isInactive && (
+          <span className="absolute top-0 right-0 text-[8px]">💤</span>
+        )}
       </div>
     );
   }

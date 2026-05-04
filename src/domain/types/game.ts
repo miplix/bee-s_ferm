@@ -279,6 +279,11 @@ export interface GameState {
   // anti-bot
   lastMeaningfulActivity: number;
 
+  // VIP subscription (gives +1 beehive slot while active)
+  vipExpiresAt?: number | null;            // unix ms; null/undefined = no VIP
+  // Hash list of NEAR txes already credited (prevent replay)
+  processedTxHashes?: string[];
+
   // NEAR (Etap 8)
   nearAccount?: string | null;
 }
@@ -419,6 +424,8 @@ export function createInitialState(): GameState {
     pets: [],
     petStates: {},
     pendingPlacements: {},
+    vipExpiresAt: null,
+    processedTxHashes: [],
 
     lastMeaningfulActivity: now,
     nearAccount: null,

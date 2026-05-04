@@ -55,7 +55,8 @@ export function addDemoBeehive(
   if (state.island === "basic") return state; // must be on Spring+
 
   const level = getLevel(state.xp);
-  const maxSlots = maxBeehiveSlots(level, state.island);
+  const vipActive = !!(state.vipExpiresAt && state.vipExpiresAt > now);
+  const maxSlots = maxBeehiveSlots(level, state.island, vipActive);
   if (state.beehives.length >= maxSlots) return state;
 
   const hive: BeehiveState = {
@@ -83,7 +84,8 @@ export function buyBeehive(
   if (state.island === "basic") return state;
 
   const level = getLevel(state.xp);
-  const maxSlots = maxBeehiveSlots(level, state.island);
+  const vipActive = !!(state.vipExpiresAt && state.vipExpiresAt > now);
+  const maxSlots = maxBeehiveSlots(level, state.island, vipActive);
   if (state.beehives.length >= maxSlots) return state;
 
   if (state.pollen < BEEHIVE_LV1_COST) return state;
@@ -177,8 +179,18 @@ export function accruePassivePollen(
   state: GameState,
   now: number,
 ): GameState {
+  // Slot limit: only first N hives accrue. Excess hives (e.g. VIP-granted that
+  // outlived VIP) stop producing until VIP renewed or level grants more slots.
+  const level = getLevel(state.xp);
+  const vipActive = !!(state.vipExpiresAt && state.vipExpiresAt > now);
+  const activeSlots = maxBeehiveSlots(level, state.island, vipActive);
+
   let totalAccrued = 0;
-  const newBeehives = state.beehives.map((hive) => {
+  const newBeehives = state.beehives.map((hive, idx) => {
+    if (idx >= activeSlots) {
+      // Inactive — no accrual. Just bump lastAccrualAt to avoid retroactive catch-up later.
+      return { ...hive, lastAccrualAt: now };
+    }
     const rate = hive.level === 0 ? DEMO_POLLEN_PER_DAY : (BEEHIVE_LEVELS[hive.level]?.pollenPerDay ?? 0);
     const elapsedMs = now - hive.lastAccrualAt;
     if (elapsedMs <= 0) return hive;

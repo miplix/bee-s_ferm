@@ -10,24 +10,38 @@ import type { IslandId } from "../types/ids";
  *   40-44: 6,  45-49: 7,  50-74: 8,  75-99: 9,  100-119: 10,
  *   120-139: 11,  140-159: 12,  160-179: 13,  180-199: 14,  200: 15
  */
-export function maxBeehiveSlots(level: number, island: IslandId): number {
+export function maxBeehiveSlots(level: number, island: IslandId, vipActive = false): number {
   // Beehives are NOT available on Basic Island
   if (island === "basic") return 0;
 
-  if (level < 10) return 0;
-  if (level < 15) return 1;
-  if (level < 25) return 2;
-  if (level < 30) return 3;
-  if (level < 35) return 4;
-  if (level < 40) return 5;
-  if (level < 45) return 6;
-  if (level < 50) return 7;
-  if (level < 75) return 8;
-  if (level < 100) return 9;
-  if (level < 120) return 10;
-  if (level < 140) return 11;
-  if (level < 160) return 12;
-  if (level < 180) return 13;
-  if (level < 200) return 14;
-  return 15;
+  let slots: number;
+  if (level < 10) slots = 0;
+  else if (level < 15) slots = 1;
+  else if (level < 25) slots = 2;
+  else if (level < 30) slots = 3;
+  else if (level < 35) slots = 4;
+  else if (level < 40) slots = 5;
+  else if (level < 45) slots = 6;
+  else if (level < 50) slots = 7;
+  else if (level < 75) slots = 8;
+  else if (level < 100) slots = 9;
+  else if (level < 120) slots = 10;
+  else if (level < 140) slots = 11;
+  else if (level < 160) slots = 12;
+  else if (level < 180) slots = 13;
+  else if (level < 200) slots = 14;
+  else slots = 15;
+
+  // VIP grants +1 extra slot while active
+  if (vipActive && slots > 0) slots += 1;
+
+  return slots;
+}
+
+/**
+ * Base (non-VIP) slots — used to determine which beehives become inactive
+ * if VIP expires while user has more than base slots.
+ */
+export function baseBeehiveSlots(level: number, island: IslandId): number {
+  return maxBeehiveSlots(level, island, false);
 }
