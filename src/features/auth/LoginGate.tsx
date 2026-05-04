@@ -26,22 +26,12 @@ export function LoginGate({ children }: { children: React.ReactNode }) {
         background: "linear-gradient(180deg, #6dc3e0 0%, #4ea7d4 60%, #3a8bbf 100%)",
       }}
     >
-      <div className="bg-brown-800 border-4 border-yellow-600 p-6 max-w-[420px] w-[90%] shadow-2xl">
-        <div className="text-center mb-4">
+      <div className="bg-brown-800 border-4 border-yellow-600 p-6 max-w-[360px] w-[90%] shadow-2xl">
+        <div className="text-center mb-5">
           <div className="text-5xl mb-2">🐝</div>
-          <h1 className="font-game text-[14px] text-yellow-300 mb-2">
+          <h1 className="font-game text-[14px] text-yellow-300">
             Пчело-ферма
           </h1>
-          <div className="font-game text-[8px] text-white/70">
-            Чтобы играть — подключи NEAR-кошелёк
-          </div>
-        </div>
-
-        <div className="bg-brown-900/60 border border-black/50 p-3 mb-4 font-game text-[7px] text-white/60 leading-relaxed">
-          • Прогресс сохраняется в облаке<br />
-          • Один кошелёк = один сейв на всех устройствах<br />
-          • Поддержка HOT Wallet, MyNearWallet, Sender и др.<br />
-          • Mainnet, без комиссий за подключение
         </div>
 
         <button
@@ -51,10 +41,6 @@ export function LoginGate({ children }: { children: React.ReactNode }) {
         >
           {busy ? "..." : "🦊 Подключить NEAR"}
         </button>
-
-        <div className="font-game text-[6px] text-white/30 text-center mt-3">
-          Нет кошелька? Скачай <span className="underline">HOT Wallet</span> в App Store / Google Play
-        </div>
       </div>
     </div>
   );
