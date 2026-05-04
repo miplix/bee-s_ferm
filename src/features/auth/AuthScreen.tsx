@@ -86,26 +86,26 @@ export function AuthScreen() {
 
   if (mode === "checking" || mode === "guest" || !isCloudEnabled()) {
     return (
-      <div className="absolute top-2 right-2 z-40">
+      <>
         {!isCloudEnabled() ? (
-          <span className="font-game text-[7px] text-white/40 px-2 py-1 bg-black/40 border border-white/10">offline</span>
+          <span className="font-game text-[7px] text-white/40 px-2 py-1 bg-black/40 border border-white/10 whitespace-nowrap">offline</span>
         ) : (
           <button
-            className="font-game text-[8px] px-2 py-1 border border-black bg-brown-700 text-yellow-200 hover:bg-brown-600"
+            className="font-game text-[8px] px-2 py-1 border border-black bg-brown-700 text-yellow-200 hover:bg-brown-600 whitespace-nowrap"
             onClick={() => setMode("login")}
           >
             ☁ Войти
           </button>
         )}
-      </div>
+      </>
     );
   }
 
   if (mode === "logged_in") {
     return (
-      <div className="absolute top-2 right-2 z-40 flex gap-1 items-center">
-        <span className="font-game text-[7px] text-green-300 px-2 py-1 bg-black/40 border border-green-700/50">
-          ☁ {userEmail}
+      <>
+        <span className="font-game text-[7px] text-green-300 px-2 py-1 bg-black/40 border border-green-700/50 whitespace-nowrap">
+          ☁ {userEmail && userEmail.length > 16 ? userEmail.slice(0, 14) + "…" : userEmail}
         </span>
         <button
           className="font-game text-[7px] px-2 py-1 border border-black bg-red-900 text-red-200 hover:bg-red-800"
@@ -113,7 +113,7 @@ export function AuthScreen() {
         >
           выйти
         </button>
-      </div>
+      </>
     );
   }
 

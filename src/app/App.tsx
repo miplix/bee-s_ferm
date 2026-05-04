@@ -7,9 +7,9 @@ import { ErrorBoundary } from "../features/shared/ErrorBoundary";
 // DailyChest moved to be a cell on the island (see daily_chest CellType)
 import { WelcomeScreen } from "../features/panels/WelcomeScreen";
 import { Toaster } from "../features/shared/Toaster";
-import { AuthScreen } from "../features/auth/AuthScreen";
+import { TopRightControls } from "../features/auth/TopRightControls";
+import { LoginGate } from "../features/auth/LoginGate";
 import { PendingPlacementsBar } from "../features/farm/PendingPlacementsBar";
-import { NearWalletButton } from "../features/near/NearWalletButton";
 import { usePassiveTick } from "../hooks/usePassiveTick";
 import { useStore } from "../state/store";
 
@@ -29,17 +29,18 @@ function GameRoot() {
   }, [setPanel]);
 
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#1a1a2e]">
-      <Hud />
-      <FarmView />
-      <Quickbar />
-      <PanelHost />
-      <PendingPlacementsBar />
-      <NearWalletButton />
-      <AuthScreen />
-      <WelcomeScreen />
-      <Toaster />
-    </div>
+    <LoginGate>
+      <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#1a1a2e]">
+        <Hud />
+        <FarmView />
+        <Quickbar />
+        <PanelHost />
+        <PendingPlacementsBar />
+        <TopRightControls />
+        <WelcomeScreen />
+        <Toaster />
+      </div>
+    </LoginGate>
   );
 }
 
