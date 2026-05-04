@@ -174,7 +174,6 @@ export interface StoreActions {
   pollenBoostMode: boolean;
   togglePollenBoost(): void;
   applyPollenBoost(cx: number, cy: number): void;
-  buyPollen(amount: number): void;
   cancelMove(): void;
 
   // Grid click (dispatches correct action based on cell type + selected tool)
@@ -580,18 +579,6 @@ export const useStore = create<Store>()(
           sfx.plant();
           return next;
         }),
-      buyPollen: (amount) =>
-        set((s) => {
-          // 100 pollen = 50 coins → 0.5 coins/pollen
-          const cost = amount * 0.5;
-          if (s.coins < cost - 0.001) { toast("Не хватает монет", "error"); return s; }
-          return {
-            ...s,
-            coins: parseFloat((s.coins - cost).toFixed(4)),
-            pollen: parseFloat(((s.pollen ?? 0) + amount).toFixed(4)),
-          };
-        }),
-
       // --- Move ---
       toggleMoveMode: () =>
         set((s) => ({ moveMode: !s.moveMode, moveSource: null })),
