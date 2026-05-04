@@ -7,14 +7,15 @@ import { toast } from "../../state/toastStore";
 /** Modal: send pollen.tkn.near FT to recipient → credit pollen 1:1 in game. */
 export function PollenTopupModal({ onClose }: { onClose: () => void }) {
   const [amount, setAmount] = useState("100");
+  // Token has decimals=0 → only whole numbers
   const [busy, setBusy] = useState(false);
   const [lastTx, setLastTx] = useState<string | null>(null);
   const account = getAccount();
   const currentPollen = useStore((s) => s.pollen ?? 0);
 
   const handleSend = async () => {
-    const n = parseFloat(amount);
-    if (!isFinite(n) || n <= 0) { toast("Введи число > 0", "error"); return; }
+    const n = parseInt(amount, 10);
+    if (!isFinite(n) || n <= 0) { toast("Введи целое число > 0", "error"); return; }
     if (!account) { toast("Подключи кошелёк", "error"); return; }
     setBusy(true);
     try {

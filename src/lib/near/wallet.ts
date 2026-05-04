@@ -7,13 +7,11 @@ const WC_PROJECT_ID = "1292473190ce7eb75c9de67e15aaad99";
 // Treasury account that receives VIP NEAR payments
 export const TREASURY_ID = (import.meta.env.VITE_NEAR_TREASURY_ID as string) || "darai_drop.near";
 
-// Pollen FT contract (NEP-141) and recipient
+// Pollen FT contract (NEP-141) and recipient.
+// Decimals=0 verified via on-chain ft_metadata: 1 token = 1 base unit (no fractions).
 export const POLLEN_TOKEN_CONTRACT = "pollen.tkn.near";
 export const POLLEN_RECIPIENT = "darai_drop.near";
-export const POLLEN_TOKEN_DECIMALS = parseInt(
-  (import.meta.env.VITE_POLLEN_TOKEN_DECIMALS as string) || "18",
-  10
-);
+export const POLLEN_TOKEN_DECIMALS = 0;
 
 const YOCTO = 10n ** 24n;
 function nearToYocto(near: number): string {
