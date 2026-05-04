@@ -1,12 +1,14 @@
 import { NearConnector, NearWalletBase } from "@hot-labs/near-connect";
 import SignClient from "@walletconnect/sign-client";
 
-const NETWORK = "mainnet" as const;  // всегда mainnet
-const WALLETCONNECT_PROJECT_ID = (import.meta.env.VITE_WALLETCONNECT_PROJECT_ID as string) || "";
+// Public WalletConnect Project ID (used by hot-connector example).
+// Можно оставить так — оплата за него не идёт, лимит generous.
+// Если будет проблема (rate limit), просто зарегистрируем свой на cloud.reown.com.
+const WC_PROJECT_ID = "1292473190ce7eb75c9de67e15aaad99";
 
 let _connector: NearConnector | null = null;
 let _wallet: NearWalletBase | undefined;
-let _account: { id: string; network: "mainnet" | "testnet" } | null = null;
+let _account: { id: string; network: "mainnet" } | null = null;
 
 const listeners = new Set<(account: typeof _account) => void>();
 function emit() { for (const fn of listeners) fn(_account); }
@@ -20,24 +22,22 @@ export function onAccount(fn: (account: typeof _account) => void): () => void {
 
 export function getAccount() { return _account; }
 
-/** Initialize NearConnector singleton. Idempotent. */
+/** Initialize NearConnector singleton. Idempotent. Always mainnet. */
 export function getConnector(): NearConnector {
   if (_connector) return _connector;
 
-  const walletConnect = WALLETCONNECT_PROJECT_ID
-    ? SignClient.init({
-        projectId: WALLETCONNECT_PROJECT_ID,
-        metadata: {
-          name: "Пчело-ферма",
-          description: "Bee Farm — NEAR farming game",
-          url: typeof window !== "undefined" ? window.location.origin : "",
-          icons: ["/icons/coin.png"],
-        },
-      })
-    : undefined;
+  const walletConnect = SignClient.init({
+    projectId: WC_PROJECT_ID,
+    metadata: {
+      name: "Пчело-ферма",
+      description: "Bee Farm — NEAR farming game",
+      url: typeof window !== "undefined" ? window.location.origin : "https://bee-s-ferm.vercel.app",
+      icons: ["/icons/coin.png"],
+    },
+  });
 
   _connector = new NearConnector({
-    network: NETWORK,
+    network: "mainnet",
     walletConnect,
     providers: { mainnet: ["https://relmn.aurora.dev"] },
   });
@@ -46,7 +46,7 @@ export function getConnector(): NearConnector {
     _wallet = await _connector!.wallet();
     const acc = t.accounts?.[0];
     if (acc) {
-      _account = { id: acc.accountId, network: acc.accountId.endsWith("testnet") ? "testnet" : "mainnet" };
+      _account = { id: acc.accountId, network: "mainnet" };
       emit();
     }
   });
@@ -62,17 +62,10 @@ export function getConnector(): NearConnector {
 
 /** Open wallet selector and connect. */
 export async function connectNear(): Promise<void> {
-  const c = getConnector();
-  await c.connect();
+  await getConnector().connect();
 }
 
 /** Disconnect current wallet. */
 export async function disconnectNear(): Promise<void> {
-  const c = getConnector();
-  await c.disconnect();
-}
-
-/** Returns true if NEAR wallet integration is enabled (env configured). */
-export function isNearEnabled(): boolean {
-  return !!WALLETCONNECT_PROJECT_ID;
+  await getConnector().disconnect();
 }

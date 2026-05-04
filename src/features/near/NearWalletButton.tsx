@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { connectNear, disconnectNear, getAccount, isNearEnabled, onAccount } from "../../lib/near/wallet";
+import { connectNear, disconnectNear, getAccount, onAccount } from "../../lib/near/wallet";
 import { useStore } from "../../state/store";
 
 /** Floating NEAR wallet button. Shows account ID when connected. */
@@ -14,8 +14,6 @@ export function NearWalletButton() {
     });
     return off;
   }, []);
-
-  if (!isNearEnabled()) return null;
 
   return (
     <div className="absolute z-40" style={{ top: 8, right: 130 }}>
