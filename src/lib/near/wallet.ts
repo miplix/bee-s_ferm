@@ -235,15 +235,20 @@ export async function sendPollenToken(amount: number): Promise<string> {
 }
 
 /**
- * Withdraw pollen from in-game balance to player's NEAR wallet (calls ft_transfer FROM treasury).
- * NOTE: This requires the treasury account to sign tx — needs server-side relayer.
- * For now stub: marks intent, server processes async. Returns request id.
+ * 🚧 NOT_AVAILABLE — функция вывода пыльцы пока не реализована.
+ *
+ * Требует server-side relayer (Supabase Edge Function с приватным ключом treasury),
+ * который выполняет ft_transfer FROM darai_drop.near → user_wallet.
+ *
+ * Tariff (when implemented):
+ *   - VIP active:   fee = 5%
+ *   - VIP inactive: fee = 25%
  */
-export async function requestPollenWithdraw(amount: number, vipActive: boolean): Promise<{ amountToReceive: number; fee: number }> {
-  if (!_account) throw new Error("Кошелёк не подключён");
+export const POLLEN_WITHDRAW_AVAILABLE = false;
+
+/** Calculate fee preview for UI display (без выполнения транзакции). */
+export function previewWithdrawFee(amount: number, vipActive: boolean): { amountToReceive: number; fee: number; feePct: number } {
   const feePct = vipActive ? 0.05 : 0.25;
   const fee = Math.floor(amount * feePct);
-  const amountToReceive = amount - fee;
-  // TODO: persist request to Supabase, relayer will pick it up and ft_transfer from treasury.
-  return { amountToReceive, fee };
+  return { amountToReceive: amount - fee, fee, feePct };
 }
