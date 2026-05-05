@@ -42,9 +42,9 @@ export function Hud() {
 
       {/* Pollen */}
       <div className="flex items-center gap-1">
-        <span className="text-sm">🌼</span>
+        <img src="/icons/pollen.png" alt="" className="w-4 h-4" />
         <span className="font-game text-[8px] text-white">
-          {pollen.toFixed(1)}
+          {pollen.toFixed(0)}
         </span>
       </div>
 

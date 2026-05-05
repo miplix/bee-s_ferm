@@ -137,9 +137,44 @@ function toTokenUnits(amount: number, decimals: number): string {
   return (BigInt(whole) * (10n ** BigInt(decimals)) + BigInt(padded)).toString();
 }
 
+/** Query ft_metadata or any view function via NEAR RPC. */
+async function viewFunction(contractId: string, methodName: string, args: object = {}): Promise<any> {
+  const argsBase64 = btoa(JSON.stringify(args));
+  const res = await fetch("https://rpc.mainnet.near.org", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      jsonrpc: "2.0", id: "1", method: "query",
+      params: {
+        request_type: "call_function",
+        account_id: contractId,
+        method_name: methodName,
+        args_base64: argsBase64,
+        finality: "final",
+      },
+    }),
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
+  const bytes = data.result?.result ?? [];
+  const text = new TextDecoder().decode(new Uint8Array(bytes));
+  return text ? JSON.parse(text) : null;
+}
+
+/** Check if account is registered with the FT contract (NEP-145 storage). */
+async function isStorageRegistered(contractId: string, accountId: string): Promise<boolean> {
+  try {
+    const balance = await viewFunction(contractId, "storage_balance_of", { account_id: accountId });
+    return balance != null;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Send NEP-141 fungible tokens (pollen.tkn.near) → POLLEN_RECIPIENT.
- * Returns tx hash. Requires 1 yoctoNEAR attached_deposit per NEP-141 standard.
+ * Auto-registers sender storage on the FT contract if not yet (NEP-145).
+ * Returns tx hash.
  */
 export async function sendPollenToken(amount: number): Promise<string> {
   if (!_account) throw new Error("Кошелёк не подключён");
@@ -148,26 +183,67 @@ export async function sendPollenToken(amount: number): Promise<string> {
 
   const tokenAmount = toTokenUnits(amount, POLLEN_TOKEN_DECIMALS);
 
+  // Check if sender is registered with the FT contract; if not — batch storage_deposit
+  const senderRegistered = await isStorageRegistered(POLLEN_TOKEN_CONTRACT, _account.id);
+  const recipientRegistered = await isStorageRegistered(POLLEN_TOKEN_CONTRACT, POLLEN_RECIPIENT);
+
+  const actions: any[] = [];
+  if (!senderRegistered) {
+    actions.push({
+      type: "FunctionCall",
+      params: {
+        methodName: "storage_deposit",
+        args: { account_id: _account.id, registration_only: true },
+        gas: "30000000000000",
+        deposit: "1250000000000000000000",  // 0.00125 NEAR (standard NEP-145 min)
+      },
+    });
+  }
+  if (!recipientRegistered) {
+    actions.push({
+      type: "FunctionCall",
+      params: {
+        methodName: "storage_deposit",
+        args: { account_id: POLLEN_RECIPIENT, registration_only: true },
+        gas: "30000000000000",
+        deposit: "1250000000000000000000",
+      },
+    });
+  }
+  actions.push({
+    type: "FunctionCall",
+    params: {
+      methodName: "ft_transfer",
+      args: {
+        receiver_id: POLLEN_RECIPIENT,
+        amount: tokenAmount,
+        memo: "bee-farm pollen topup",
+      },
+      gas: "30000000000000",
+      deposit: "1",   // 1 yoctoNEAR (NEP-141)
+    },
+  });
+
   const result: any = await wallet.signAndSendTransaction({
     receiverId: POLLEN_TOKEN_CONTRACT,
-    actions: [
-      {
-        type: "FunctionCall",
-        params: {
-          methodName: "ft_transfer",
-          args: {
-            receiver_id: POLLEN_RECIPIENT,
-            amount: tokenAmount,
-            memo: "bee-farm pollen topup",
-          },
-          gas: "30000000000000",  // 30 Tgas
-          deposit: "1",            // 1 yoctoNEAR (NEP-141 requirement)
-        },
-      },
-    ],
+    actions,
   } as any);
 
   const txHash = result?.transaction?.hash || result?.transaction_outcome?.id || "";
   if (!txHash) throw new Error("Транзакция не подтверждена");
   return txHash;
+}
+
+/**
+ * Withdraw pollen from in-game balance to player's NEAR wallet (calls ft_transfer FROM treasury).
+ * NOTE: This requires the treasury account to sign tx — needs server-side relayer.
+ * For now stub: marks intent, server processes async. Returns request id.
+ */
+export async function requestPollenWithdraw(amount: number, vipActive: boolean): Promise<{ amountToReceive: number; fee: number }> {
+  if (!_account) throw new Error("Кошелёк не подключён");
+  const feePct = vipActive ? 0.05 : 0.25;
+  const fee = Math.floor(amount * feePct);
+  const amountToReceive = amount - fee;
+  // TODO: persist request to Supabase, relayer will pick it up and ft_transfer from treasury.
+  return { amountToReceive, fee };
 }
