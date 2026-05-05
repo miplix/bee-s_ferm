@@ -83,10 +83,15 @@ export function collectCompost(
 }
 
 /**
- * Apply fertilizer to a specific plot cell.
- * - sprout_mix: +0.2 flat crop yield (stored on cell, applied at harvest)
- * - fruitful_blend: +0.2 flat fruit yield (stored on cell, applied at harvest)
- * - rapid_root: -50% remaining grow time (modifies effectiveGrowMs immediately)
+ * Apply fertilizer to a plot or fruit_patch cell.
+ * - sprout_mix: ×1.5 crop yield for 12h (prorated at harvest by time-under-boost)
+ * - fruitful_blend: ×2 fruit yield for 12h (prorated at harvest by time-under-boost)
+ * - rapid_root: -50% remaining grow time (one-shot, no timer)
+ *
+ * Fertilizer can be applied to:
+ *   - empty cell (will boost the next planting once a crop is planted)
+ *   - cell with a growing crop (boost begins immediately, prorated)
+ * Cannot stack: cell must have no active fertilizer.
  */
 export function applyFertilizer(
   state: GameState,
@@ -96,18 +101,31 @@ export function applyFertilizer(
   now: number,
 ): GameState {
   const key = cellKey(cx, cy);
-  const cell = state.cells[key];
-  if (!cell || cell.type !== "plot") return state;
+  // resolve to parent for 2x2 (fruit_patch)
+  const rawCell = state.cells[key];
+  if (!rawCell) return state;
+  const realKey = rawCell.parentKey ?? key;
+  const cell = state.cells[realKey];
+  if (!cell) return state;
+
+  const fertDef = getFertilizerDef(fertilizerId);
+  if (!fertDef) return state;
+
+  // Type compatibility check
+  if (fertDef.effect.type === "fruit_yield_mult") {
+    if (cell.type !== "fruit_patch") return state;
+  } else {
+    // sprout_mix / rapid_root → only plot
+    if (cell.type !== "plot") return state;
+  }
 
   // Must have fertilizer in inventory
   const fertCount = state.inventory[fertilizerId] ?? 0;
   if (fertCount < 1) return state;
 
-  const fertDef = getFertilizerDef(fertilizerId);
-  if (!fertDef) return state;
-
-  // Cannot stack fertilizers on the same plot
-  if (cell.fertilizerId) return state;
+  // Cannot stack: only allow if no active fertilizer (or expired)
+  const stillActive = (cell.fertilizerUntil ?? 0) > now;
+  if (cell.fertilizerId && stillActive) return state;
 
   const inv = { ...state.inventory };
   inv[fertilizerId] = fertCount - 1;
@@ -115,21 +133,41 @@ export function applyFertilizer(
 
   const cells = { ...state.cells };
 
-  if (fertDef.effect.type === "speed_up" && cell.cropId && cell.plantedAt != null) {
-    // rapid_root: reduce remaining grow time by 50%
-    const currentGrowMs = cell.effectiveGrowMs ?? 0;
-    if (currentGrowMs > 0) {
-      const elapsedMs = now - cell.plantedAt;
-      const remainingMs = Math.max(0, currentGrowMs - elapsedMs);
-      const newRemaining = Math.round(remainingMs * (1 - fertDef.effect.value));
-      const newEffectiveGrowMs = elapsedMs + newRemaining;
-      cells[key] = { ...cell, effectiveGrowMs: newEffectiveGrowMs, fertilizerId };
+  if (fertDef.effect.type === "speed_up") {
+    // rapid_root: reduce remaining grow time by 50% (one-shot, no timer)
+    if (cell.cropId && cell.plantedAt != null) {
+      const baseGrowMs = cell.effectiveGrowMs ?? 0;
+      if (baseGrowMs > 0) {
+        const elapsedMs = now - cell.plantedAt;
+        const remainingMs = Math.max(0, baseGrowMs - elapsedMs);
+        const newRemaining = Math.round(remainingMs * (1 - fertDef.effect.value));
+        const newEffectiveGrowMs = elapsedMs + newRemaining;
+        cells[realKey] = {
+          ...cell,
+          effectiveGrowMs: newEffectiveGrowMs,
+          fertilizerId,
+          fertilizedAt: now,
+          fertilizerUntil: null, // one-shot effect
+        };
+      } else {
+        // No crop planted — speed-up has no effect, refund? For UX, refund:
+        inv[fertilizerId] = (inv[fertilizerId] ?? 0) + 1;
+        return state;
+      }
     } else {
-      cells[key] = { ...cell, fertilizerId };
+      // No crop — refund
+      inv[fertilizerId] = (inv[fertilizerId] ?? 0) + 1;
+      return state;
     }
   } else {
-    // sprout_mix / fruitful_blend: store on cell, applied at harvest time
-    cells[key] = { ...cell, fertilizerId };
+    // yield_mult / fruit_yield_mult: time-based, prorated at harvest
+    const durationMs = fertDef.effect.durationMs ?? 0;
+    cells[realKey] = {
+      ...cell,
+      fertilizerId,
+      fertilizedAt: now,
+      fertilizerUntil: now + durationMs,
+    };
   }
 
   return {
@@ -138,4 +176,33 @@ export function applyFertilizer(
     inventory: inv,
     lastMeaningfulActivity: now,
   };
+}
+
+/**
+ * Compute prorated yield multiplier for a fertilizer applied to a growing cell.
+ * Same prorating model as pollen boost: yield_mult = 1 + boostFraction × (mult - 1).
+ *
+ * `mult` is the fertilizer's multiplier (e.g. 1.5 for sprout_mix, 2.0 for fruitful_blend).
+ * Returns 1 if no fertilizer is active or it doesn't match the requested type.
+ */
+export function fertilizerProratedMultiplier(
+  fertilizerId: string | null | undefined,
+  expectedType: "yield_mult" | "fruit_yield_mult",
+  cycleStart: number,             // plantedAt or refTime (for fruit re-harvests)
+  growMs: number,
+  fertilizedAt: number | null | undefined,
+  fertilizerUntil: number | null | undefined,
+  harvestTime: number,
+): number {
+  if (!fertilizerId || !fertilizedAt || !fertilizerUntil) return 1;
+  const def = getFertilizerDef(fertilizerId);
+  if (!def || def.effect.type !== expectedType) return 1;
+
+  const totalGrow = Math.min(harvestTime, cycleStart + growMs) - cycleStart;
+  if (totalGrow <= 0) return 1;
+  const boostStart = Math.max(cycleStart, fertilizedAt);
+  const boostEnd = Math.min(cycleStart + growMs, fertilizerUntil, harvestTime);
+  const boostedTime = Math.max(0, boostEnd - boostStart);
+  const fraction = boostedTime / totalGrow;
+  return 1 + fraction * (def.effect.value - 1);
 }

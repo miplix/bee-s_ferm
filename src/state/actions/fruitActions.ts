@@ -5,6 +5,7 @@ import { getFruitDef } from "../../data/fruits.data";
 import { getLevel } from "../../domain/level/level";
 import { elapsed } from "../../domain/time/time";
 import { pollenProratedMultiplier } from "./pollenBoostActions";
+import { fertilizerProratedMultiplier } from "./compostActions";
 import { mulberry32, randInt } from "../../domain/rng/prng";
 
 /**
@@ -90,8 +91,32 @@ export function harvestFruit(
     cell.pollenBoostUntil,
     now,
   );
-  const yieldAmount = Math.floor(1 * pollenMult);
+  // Fertilizer (fruitful_blend) prorated for this harvest cycle (refTime → now)
+  const fertMult = fertilizerProratedMultiplier(
+    cell.fertilizerId,
+    "fruit_yield_mult",
+    refTime,
+    fruit.growMs,
+    cell.fertilizedAt,
+    cell.fertilizerUntil,
+    now,
+  );
+  const rawYield = 1 * pollenMult * fertMult;
+  // Stochastic rounding for fractional yield (fruit base = 1)
+  let yieldAmount = Math.floor(rawYield);
+  const frac = rawYield - yieldAmount;
+  if (frac > 0) {
+    const seed = (refTime ^ key.charCodeAt(0)) >>> 0;
+    const r = (seed * 9301 + 49297) % 233280 / 233280;
+    if (r < frac) yieldAmount += 1;
+  }
   inv[cell.fruitId] = (inv[cell.fruitId] ?? 0) + yieldAmount;
+
+  // Fertilizer expires when its timer ends — clear if past expiry
+  const fertExpired = (cell.fertilizerUntil ?? 0) > 0 && (cell.fertilizerUntil ?? 0) <= now;
+  const clearedFert = fertExpired
+    ? { fertilizerId: null, fertilizedAt: null, fertilizerUntil: null }
+    : {};
 
   if (harvestsLeft <= 0) {
     // Bush depleted — leave as stump until player cuts it (cutSapling)
@@ -101,13 +126,17 @@ export function harvestFruit(
       fruitPlantedAt: null,
       fruitHarvestsLeft: 0,            // 0 = stump, awaits cut
       lastFruitHarvest: null,
+      fertilizerId: null,
+      fertilizedAt: null,
+      fertilizerUntil: null,
     };
   } else {
-    // Bush still has harvests remaining
+    // Bush still has harvests remaining (fertilizer may persist if still active)
     cells[key] = {
       ...cell,
       fruitHarvestsLeft: harvestsLeft,
       lastFruitHarvest: now,
+      ...clearedFert,
     };
   }
 

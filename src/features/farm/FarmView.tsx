@@ -557,13 +557,17 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
     }
 
     const boosted = (cell.pollenBoostUntil ?? 0) > now;
+    const fertilized = (cell.fertilizerUntil ?? 0) > now;
+    const shadowParts: string[] = [];
+    if (boosted) shadowParts.push("inset 0 0 8px 2px rgba(255,200,50,0.7)");
+    if (fertilized) shadowParts.push("inset 0 0 8px 2px rgba(80,220,80,0.7)");
     return (
       <div onClick={onClick}
         className={`relative flex flex-col items-center justify-center cursor-pointer
           ${ready ? "animate-pulse" : ""} ${moveOverlay}`}
         style={{
           width: CELL_SIZE, height: CELL_SIZE,
-          boxShadow: boosted ? "inset 0 0 8px 2px rgba(255,200,50,0.7)" : undefined,
+          boxShadow: shadowParts.length > 0 ? shadowParts.join(", ") : undefined,
         }}>
         {/* Empty plot dirt patch — only when nothing growing */}
         {!growing && (
@@ -599,6 +603,15 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
         {ready && (
           <span className="absolute top-0 right-0 text-[8px] font-game text-green-300">!</span>
         )}
+        {fertilized && (
+          <span
+            className="absolute top-0 left-0 font-game text-green-200 leading-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]"
+            style={{ fontSize: "6px", padding: "1px" }}
+            title="Удобрено"
+          >
+            🌱{fmtDuration((cell.fertilizerUntil ?? 0) - now)}
+          </span>
+        )}
       </div>
     );
   }
@@ -614,6 +627,11 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
     const sz = is2x2 ? 2 : 1;
     const isStump = !growing && cell.fruitId == null && cell.fruitHarvestsLeft === 0;
     const fruitImg = fruitStageSrc(fruitDef?.id ?? "", !!growing, prog, ready, isStump ? 0 : harvestsLeft);
+    const fpBoosted = (cell.pollenBoostUntil ?? 0) > now;
+    const fpFertilized = (cell.fertilizerUntil ?? 0) > now;
+    const fpShadowParts: string[] = [];
+    if (fpBoosted) fpShadowParts.push("inset 0 0 8px 2px rgba(255,200,50,0.7)");
+    if (fpFertilized) fpShadowParts.push("inset 0 0 8px 2px rgba(80,220,80,0.7)");
     return (
       <div onClick={onClick}
         {...hoverHandlers}
@@ -622,6 +640,7 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
           width: CELL_SIZE, height: CELL_SIZE,
           overflow: is2x2 ? "visible" : "hidden",
           zIndex: is2x2 ? 10 : 1,
+          boxShadow: fpShadowParts.length > 0 ? fpShadowParts.join(", ") : undefined,
         }}>
         <img src={fruitImg} alt=""
              className="absolute object-contain pointer-events-none max-w-none"
@@ -641,6 +660,15 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
         {ready && <span className="absolute top-0 right-0 text-[8px] font-game text-green-300">!</span>}
         {harvestsLeft > 0 && (
           <span className="absolute bottom-0 left-0 font-game text-[6px] text-yellow-300 ml-0.5 mb-0.5">{harvestsLeft}x</span>
+        )}
+        {fpFertilized && (
+          <span
+            className="absolute top-0 left-0 font-game text-green-200 leading-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]"
+            style={{ fontSize: "6px", padding: "1px" }}
+            title="Удобрено"
+          >
+            🌱{fmtDuration((cell.fertilizerUntil ?? 0) - now)}
+          </span>
         )}
       </div>
     );

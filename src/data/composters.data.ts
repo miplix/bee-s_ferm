@@ -54,14 +54,27 @@ export function getComposterDef(id: string): ComposterDef | undefined {
 }
 
 // ── Fertilizer effect definitions ──
+//
+// Time-based multipliers are PRORATED at harvest by the fraction of grow time
+// the cell was under boost (same model as pollen boost). One-shot effects
+// (speed_up) apply immediately and don't need a timer.
+
+export const FERTILIZER_DURATION_MS = 12 * 3600_000;  // 12h, same as pollen boost
 
 export interface FertilizerDef {
   id: string;
   name: string;
+  nameRu: string;
   description: string;
   effect: {
-    type: "flat_yield" | "flat_fruit_yield" | "speed_up";
-    value: number;   // flat bonus or fraction (0.5 = -50% remaining time)
+    /**
+     * yield_mult       — multiplicative yield boost on plot crops, prorated by time
+     * fruit_yield_mult — multiplicative yield boost on fruit_patch, prorated by time
+     * speed_up         — one-shot reduction of remaining grow time (no timer)
+     */
+    type: "yield_mult" | "fruit_yield_mult" | "speed_up";
+    value: number;       // ×multiplier (1.5 = +50%) or fraction (0.5 = -50% remaining)
+    durationMs?: number; // only for time-based effects
   };
 }
 
@@ -69,19 +82,22 @@ const _fertilizers: FertilizerDef[] = [
   {
     id: "sprout_mix",
     name: "Sprout Mix",
-    description: "+0.2 crop yield when applied to plot",
-    effect: { type: "flat_yield", value: 0.2 },
+    nameRu: "Удобрение «Росток»",
+    description: "×1.5 урожай с грядки в течение 12ч (пропорционально времени роста)",
+    effect: { type: "yield_mult", value: 1.5, durationMs: FERTILIZER_DURATION_MS },
   },
   {
     id: "fruitful_blend",
     name: "Fruitful Blend",
-    description: "+0.2 fruit yield when applied to plot",
-    effect: { type: "flat_fruit_yield", value: 0.2 },
+    nameRu: "Удобрение «Изобилие»",
+    description: "×2 урожай с фруктового куста в течение 12ч (пропорционально времени роста)",
+    effect: { type: "fruit_yield_mult", value: 2.0, durationMs: FERTILIZER_DURATION_MS },
   },
   {
     id: "rapid_root",
     name: "Rapid Root",
-    description: "-50% remaining grow time",
+    nameRu: "Удобрение «Корнерост»",
+    description: "−50% оставшегося времени роста (одноразово при применении)",
     effect: { type: "speed_up", value: 0.5 },
   },
 ];

@@ -19,6 +19,8 @@ export interface Cell {
   plantedAt?: number | null;       // ms timestamp
   effectiveGrowMs?: number | null;  // boosted grow time (null = use crop default)
   fertilizerId?: string | null;     // applied fertilizer id
+  fertilizedAt?: number | null;     // ms timestamp when fertilizer applied
+  fertilizerUntil?: number | null;  // ms timestamp when fertilizer expires
   // resource node
   lastHarvest?: number;            // ms timestamp of last gather
   hitsLeft?: number;               // -1 = infinite (trees), N = remaining nodes

@@ -11,6 +11,7 @@ import { mulberry32 } from "../../domain/rng/prng";
 import { buildSeed } from "../../domain/rng/seed";
 import { rollCropMutant } from "../../domain/mutants/mutants";
 import { pollenProratedMultiplier } from "./pollenBoostActions";
+import { fertilizerProratedMultiplier } from "./compostActions";
 
 /** Plant a crop on a plot cell. Consumes 1 seed from inventory. */
 export function plant(
@@ -79,12 +80,17 @@ export function harvest(
   const boosts = aggregateBoosts(skillEffectsToBoosts(skillEffects));
   let harvestAmount = applyBoost(crop.harvestCount, "crop_yield", boosts);
 
-  // Fertilizer flat bonus (sprout_mix adds +0.2 crop yield)
-  if (cell.fertilizerId === "sprout_mix") {
-    harvestAmount += 0.2;
-  } else if (cell.fertilizerId === "fruitful_blend") {
-    harvestAmount += 0.2;
-  }
+  // Fertilizer (sprout_mix) prorated multiplier — same model as pollen boost
+  const fertMult = fertilizerProratedMultiplier(
+    cell.fertilizerId,
+    "yield_mult",
+    cell.plantedAt!,
+    growMs,
+    cell.fertilizedAt,
+    cell.fertilizerUntil,
+    now,
+  );
+  harvestAmount = harvestAmount * fertMult;
 
   // Pollen boost: prorated by fraction of grow time spent under boost
   const pollenMult = pollenProratedMultiplier(
@@ -96,7 +102,16 @@ export function harvest(
   );
   harvestAmount = harvestAmount * pollenMult;
 
-  const finalAmount = Math.floor(harvestAmount);
+  // Round so +50% on a single crop visibly produces +1 (1.5 → 2 with random hint).
+  // Using floor + chance for the fractional remainder via deterministic seed.
+  const fracPart = harvestAmount - Math.floor(harvestAmount);
+  let finalAmount = Math.floor(harvestAmount);
+  if (fracPart > 0) {
+    // deterministic but spread across cells: hash key+plantedAt
+    const fracSeed = (cell.plantedAt! ^ key.charCodeAt(0) ^ key.charCodeAt(2)) >>> 0;
+    const r = (fracSeed * 9301 + 49297) % 233280 / 233280;
+    if (r < fracPart) finalAmount += 1;
+  }
 
   const cells = { ...state.cells };
   const harvestedCropId = cell.cropId;
@@ -106,6 +121,8 @@ export function harvest(
     plantedAt: null,
     effectiveGrowMs: null,
     fertilizerId: null,
+    fertilizedAt: null,
+    fertilizerUntil: null,
     // Boost cleared on harvest (each plant is fresh)
     pollenBoostUntil: null,
     pollenBoostStartedAt: null,

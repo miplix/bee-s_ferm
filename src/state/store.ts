@@ -648,6 +648,11 @@ export const useStore = create<Store>()(
         }
 
         if (cell.type === "plot") {
+          // Fertilizer takes priority before harvest/plant if a fertilizer tool is selected
+          if (s.selectedTool && (s.selectedTool === "sprout_mix" || s.selectedTool === "rapid_root")) {
+            get().applyFertilizer(cx, cy, s.selectedTool);
+            return;
+          }
           if (cell.cropId && cell.plantedAt) {
             set((prev) => cropAct.harvest(prev, cx, cy, now));
             return;
@@ -663,6 +668,11 @@ export const useStore = create<Store>()(
         }
 
         if (cell.type === "fruit_patch") {
+          // Fertilizer takes priority before harvest/plant
+          if (s.selectedTool === "fruitful_blend") {
+            get().applyFertilizer(cx, cy, s.selectedTool);
+            return;
+          }
           // Stump (harvestsLeft===0): require axe to clear
           if (cell.fruitHarvestsLeft === 0 && !cell.fruitId) {
             if (s.selectedTool === "axe") {
