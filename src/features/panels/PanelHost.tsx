@@ -11,7 +11,7 @@ import { FishingPanel } from "./FishingPanel";
 import { SkillsPanel } from "./SkillsPanel";
 import { DeliveryPanel } from "./DeliveryPanel";
 import { ChorePanel } from "./ChorePanel";
-import { TradingPanel } from "./TradingPanel";
+import { ExchangePanel } from "./ExchangePanel";
 import { FactionPanel } from "./FactionPanel";
 // Pets system removed — not part of original SFL design
 import { CropMachinePanel } from "./CropMachinePanel";
@@ -39,7 +39,7 @@ export function PanelHost() {
     case "skills":       return <SkillsPanel />;       // via HUD button
     case "deliveries":   return <DeliveryPanel />;     // via Bulletin Board building
     case "chores":       return <ChorePanel />;        // via Bulletin Board building
-    case "trading":      return <TradingPanel />;      // via Trading Post building
+    case "trading":      return <ExchangePanel />;     // via Trading Post — биржа за пыльцу
     case "faction":      return <FactionPanel />;      // via Town Hall building
     case "pets":         return null;                  // pets removed
     case "crop_machine": return <CropMachinePanel />;  // via Crop Machine building
