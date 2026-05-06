@@ -558,17 +558,18 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
 
     const boosted = (cell.pollenBoostUntil ?? 0) > now;
     const fertilized = (cell.fertilizerUntil ?? 0) > now;
-    const shadowParts: string[] = [];
-    if (boosted) shadowParts.push("inset 0 0 8px 2px rgba(255,200,50,0.7)");
-    if (fertilized) shadowParts.push("inset 0 0 8px 2px rgba(80,220,80,0.7)");
     return (
       <div onClick={onClick}
         className={`relative flex flex-col items-center justify-center cursor-pointer
           ${ready ? "animate-pulse" : ""} ${moveOverlay}`}
         style={{
           width: CELL_SIZE, height: CELL_SIZE,
-          boxShadow: shadowParts.length > 0 ? shadowParts.join(", ") : undefined,
+          boxShadow: fertilized ? "inset 0 0 8px 2px rgba(80,220,80,0.7)" : undefined,
         }}>
+        {/* Pulsing yellow glow overlay (does not override green fertilizer underneath) */}
+        {boosted && <div className="pollen-glow-overlay" />}
+        {/* Pollen particles — небольшие жёлтые искры, поднимающиеся вверх */}
+        {boosted && <PollenSparkles />}
         {/* Empty plot dirt patch — only when nothing growing */}
         {!growing && (
           <img
@@ -629,9 +630,6 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
     const fruitImg = fruitStageSrc(fruitDef?.id ?? "", !!growing, prog, ready, isStump ? 0 : harvestsLeft);
     const fpBoosted = (cell.pollenBoostUntil ?? 0) > now;
     const fpFertilized = (cell.fertilizerUntil ?? 0) > now;
-    const fpShadowParts: string[] = [];
-    if (fpBoosted) fpShadowParts.push("inset 0 0 8px 2px rgba(255,200,50,0.7)");
-    if (fpFertilized) fpShadowParts.push("inset 0 0 8px 2px rgba(80,220,80,0.7)");
     return (
       <div onClick={onClick}
         {...hoverHandlers}
@@ -640,8 +638,10 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
           width: CELL_SIZE, height: CELL_SIZE,
           overflow: is2x2 ? "visible" : "hidden",
           zIndex: is2x2 ? 10 : 1,
-          boxShadow: fpShadowParts.length > 0 ? fpShadowParts.join(", ") : undefined,
+          boxShadow: fpFertilized ? "inset 0 0 8px 2px rgba(80,220,80,0.7)" : undefined,
         }}>
+        {fpBoosted && <div className="pollen-glow-overlay" />}
+        {fpBoosted && <PollenSparkles />}
         <img src={fruitImg} alt=""
              className="absolute object-contain pointer-events-none max-w-none"
              style={{ top: 0, left: 0, width: CELL_SIZE * sz, height: CELL_SIZE * sz }}
@@ -681,10 +681,13 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
     const prog = growing && flowerDef ? calcProgress(cell.flowerPlantedAt!, flowerDef.growMs, now) : -1;
     const ready = prog >= 1;
     const flowerImg = flowerStageSrc(flowerDef?.id ?? "", !!growing, prog, ready);
+    const fbBoosted = (cell.pollenBoostUntil ?? 0) > now;
     return (
       <div onClick={onClick}
         className={`relative flex flex-col items-center justify-center cursor-pointer ${ready ? "animate-pulse" : ""} ${moveOverlay}`}
         style={{ width: CELL_SIZE, height: CELL_SIZE }}>
+        {fbBoosted && <div className="pollen-glow-overlay" />}
+        {fbBoosted && <PollenSparkles />}
         <img src={flowerImg} alt="" className="absolute inset-0 w-full h-full object-contain pointer-events-none"
              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
         {!growing && selectedTool?.endsWith("_seed") && <span className="relative text-lg">➕</span>}
@@ -906,6 +909,37 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
   }
 
   return <div className="bg-[#3a7a28] border border-[#2d6a1e]/30" style={{ width: CELL_SIZE, height: CELL_SIZE }} />;
+}
+
+/**
+ * Маленькие жёлтые искры пыльцы, поднимающиеся вверх над клеткой.
+ * 5 частиц с разными задержками + горизонтальными смещениями для естественности.
+ */
+function PollenSparkles() {
+  // Static config so React doesn't re-randomize on every render (visual stutter)
+  const particles = [
+    { left: "20%", delay: "0s",   dx: "-3px" },
+    { left: "40%", delay: "0.3s", dx: "2px"  },
+    { left: "55%", delay: "0.7s", dx: "-2px" },
+    { left: "70%", delay: "1.0s", dx: "4px"  },
+    { left: "85%", delay: "1.3s", dx: "-1px" },
+  ];
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
+      {particles.map((p, i) => (
+        <span
+          key={i}
+          className="pollen-particle"
+          style={{
+            left: p.left,
+            bottom: "30%",
+            animationDelay: p.delay,
+            ["--pdx" as any]: p.dx,
+          } as React.CSSProperties}
+        />
+      ))}
+    </div>
+  );
 }
 
 function buildingEmoji(id?: string): string {
