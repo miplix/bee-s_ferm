@@ -1,8 +1,10 @@
 import { useStore } from "../../state/store";
 import { PanelShell } from "./PanelShell";
 import { PixelButton } from "../shared/PixelButton";
+import { useT } from "../../i18n/useT";
 
 export function AnimalsPanel() {
+  const t = useT();
   const buildings = useStore((s) => s.buildings);
   const animals = useStore((s) => s.animals);
   const setLocation = useStore((s) => s.setLocation);
@@ -13,7 +15,7 @@ export function AnimalsPanel() {
   const cows = animals.filter((a) => a.kind === "cow").length;
 
   return (
-    <PanelShell title="Животные">
+    <PanelShell title={t("animals.title")}>
       <div className="space-y-3">
         {hasHenhouse ? (
           <div className="bg-brown-600 p-2 border border-black/20">
@@ -21,17 +23,17 @@ export function AnimalsPanel() {
               <div>
                 <span className="text-lg">🐔</span>
                 <span className="font-game text-[8px] text-white ml-2">
-                  Курятник ({chickens}/10)
+                  {t("animals.henhouse")} ({chickens}/10)
                 </span>
               </div>
               <PixelButton onClick={() => setLocation("henhouse")}>
-                Войти
+                {t("animals.enter")}
               </PixelButton>
             </div>
           </div>
         ) : (
           <p className="font-game text-[7px] text-white/50">
-            Постройте Курятник (Ур.6) чтобы разводить кур.
+            {t("animals.no_henhouse")}
           </p>
         )}
 
@@ -41,17 +43,17 @@ export function AnimalsPanel() {
               <div>
                 <span className="text-lg">🐄</span>
                 <span className="font-game text-[8px] text-white ml-2">
-                  Хлев ({cows}/10)
+                  {t("animals.barn")} ({cows}/10)
                 </span>
               </div>
               <PixelButton onClick={() => setLocation("barn")}>
-                Войти
+                {t("animals.enter")}
               </PixelButton>
             </div>
           </div>
         ) : (
           <p className="font-game text-[7px] text-white/50">
-            Постройте Хлев (Ур.12) чтобы разводить коров.
+            {t("animals.no_barn")}
           </p>
         )}
       </div>

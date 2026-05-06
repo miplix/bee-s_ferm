@@ -15,8 +15,10 @@ import {
   isTierUnlocked,
   pointsNeededForTier,
 } from "../../domain/skills/skillEngine";
+import { useT } from "../../i18n/useT";
 
 export function SkillsPanel() {
+  const t = useT();
   const [activeTree, setActiveTree] = useState<SkillTree>("crops");
 
   const level = useStore(selectLevel);
@@ -29,11 +31,11 @@ export function SkillsPanel() {
   const tiers = [1, 2, 3] as const;
 
   return (
-    <PanelShell title="Навыки">
+    <PanelShell title={t("skills.title")}>
       {/* Available points */}
       <div className="mb-3 text-center">
         <span className="font-game text-[9px] text-yellow-300">
-          Очки навыков: {available}
+          {t("skills.points", { n: available })}
         </span>
       </div>
 
@@ -68,11 +70,11 @@ export function SkillsPanel() {
             <div key={tier}>
               <div className="flex items-center gap-2 mb-1">
                 <h4 className="font-game text-[7px] text-yellow-300">
-                  Tier {tier}
+                  {t("skills.tier", { n: tier })}
                 </h4>
                 {!unlocked && (
                   <span className="font-game text-[6px] text-red-400">
-                    Нужно ещё {needed} оч. в ветке
+                    {t("skills.tier_locked", { n: needed })}
                   </span>
                 )}
               </div>
@@ -110,6 +112,7 @@ function SkillRow({
   tierLocked: boolean;
   onLearn: () => void;
 }) {
+  const t = useT();
   return (
     <div
       className={`p-1.5 border border-black/20 rounded
@@ -127,7 +130,7 @@ function SkillRow({
               {skill.name}
             </span>
             <span className="font-game text-[6px] text-yellow-300/70 shrink-0">
-              ({skill.pointCost}pt)
+              {t("skills.cost", { n: skill.pointCost })}
             </span>
           </div>
           <p className="font-game text-[6px] text-white/60 mt-0.5">
@@ -137,7 +140,7 @@ function SkillRow({
 
         {learned ? (
           <span className="font-game text-[7px] text-green-400 shrink-0 mt-0.5">
-            Изучено
+            {t("skills.learned")}
           </span>
         ) : (
           <PixelButton
@@ -146,7 +149,7 @@ function SkillRow({
             onClick={onLearn}
             className="shrink-0 !text-[7px] !px-2 !py-1"
           >
-            Учить
+            {t("skills.learn")}
           </PixelButton>
         )}
       </div>

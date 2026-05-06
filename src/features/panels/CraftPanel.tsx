@@ -2,14 +2,16 @@ import { useStore } from "../../state/store";
 import { TOOLS } from "../../data/tools.data";
 import { PanelShell } from "./PanelShell";
 import { PixelButton } from "../shared/PixelButton";
+import { useT } from "../../i18n/useT";
 
 export function CraftPanel() {
+  const t = useT();
   const inventory = useStore((s) => s.inventory);
   const coins = useStore((s) => s.coins);
   const craftTool = useStore((s) => s.craftTool);
 
   return (
-    <PanelShell title="Инструменты">
+    <PanelShell title={t("craft.title")}>
       <div className="space-y-2">
         {TOOLS.map((tool) => {
           const canCraft = Object.entries(tool.cost).every(([res, needed]) => {
@@ -25,7 +27,7 @@ export function CraftPanel() {
                 <div className="flex-1">
                   <div className="font-game text-[8px] text-white">{tool.name}</div>
                   <div className="font-game text-[6px] text-white/60">
-                    Для: {tool.forResource}
+                    {t("craft.for")}: {tool.forResource}
                   </div>
                   {/* Cost breakdown */}
                   <div className="flex flex-wrap gap-x-2 mt-0.5">
@@ -42,7 +44,7 @@ export function CraftPanel() {
                 </div>
                 <span className="font-game text-[8px] text-yellow-300 w-6 text-right">{owned}</span>
                 <PixelButton disabled={!canCraft} onClick={() => craftTool(tool.id, 1)}>
-                  Создать
+                  {t("craft.btn.craft")}
                 </PixelButton>
               </div>
             </div>

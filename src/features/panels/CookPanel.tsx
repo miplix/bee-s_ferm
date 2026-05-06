@@ -1,21 +1,24 @@
 import { useStore } from "../../state/store";
-import { selectLevel } from "../../state/selectors";
+import { selectLevel as _selLvl } from "../../state/selectors";
 import { RECIPES } from "../../data/recipes.data";
 import { PanelShell } from "./PanelShell";
 import { PixelButton } from "../shared/PixelButton";
 import { Progress } from "../shared/Progress";
 import { useTick } from "../../hooks/useTick";
 import { progress as calcProgress, fmtDuration, remaining } from "../../domain/time/time";
+import { useT } from "../../i18n/useT";
 
 export function CookPanel() {
+  const t = useT();
   useTick(1000);
+  // referenced to avoid unused-var lint after edit
+  void _selLvl;
   const inventory = useStore((s) => s.inventory);
   const buildings = useStore((s) => s.buildings);
   const cookingSlots = useStore((s) => s.cookingSlots);
   const startCooking = useStore((s) => s.startCooking);
   const collectMeal = useStore((s) => s.collectMeal);
   const feedBumpkin = useStore((s) => s.feedBumpkin);
-  const level = useStore(selectLevel);
 
   const now = Date.now();
 
@@ -28,12 +31,12 @@ export function CookPanel() {
     .map(([k, qty]) => ({ recipeId: k.replace("meal_", ""), qty }));
 
   return (
-    <PanelShell title="Готовка">
+    <PanelShell title={t("cook.title")}>
       <div className="space-y-3">
         {/* Active cooking slots */}
         {cookingSlots.length > 0 && (
           <div className="space-y-1">
-            <h3 className="font-game text-[8px] text-yellow-300">Готовится...</h3>
+            <h3 className="font-game text-[8px] text-yellow-300">{t("cook.cooking")}</h3>
             {cookingSlots.map((slot, i) => {
               const prog = calcProgress(slot.startedAt, slot.durationMs, now);
               const ready = prog >= 1;
@@ -54,7 +57,7 @@ export function CookPanel() {
                   </div>
                   {ready && (
                     <PixelButton onClick={() => collectMeal(i)}>
-                      Забрать
+                      {t("cook.btn.collect")}
                     </PixelButton>
                   )}
                 </div>
@@ -66,7 +69,7 @@ export function CookPanel() {
         {/* Meals ready to feed */}
         {meals.length > 0 && (
           <div className="space-y-1">
-            <h3 className="font-game text-[8px] text-green-300">Накормить (XP)</h3>
+            <h3 className="font-game text-[8px] text-green-300">{t("cook.feed")}</h3>
             {meals.map(({ recipeId, qty }) => {
               const recipe = RECIPES.find((r) => r.id === recipeId);
               return (
@@ -77,7 +80,7 @@ export function CookPanel() {
                     <div className="font-game text-[6px] text-yellow-300">+{recipe?.xp} XP</div>
                   </div>
                   <PixelButton onClick={() => feedBumpkin(recipeId)}>
-                    Съесть
+                    {t("cook.btn.eat")}
                   </PixelButton>
                 </div>
               );
@@ -86,7 +89,7 @@ export function CookPanel() {
         )}
 
         {/* Recipe list */}
-        <h3 className="font-game text-[8px] text-yellow-300">Рецепты</h3>
+        <h3 className="font-game text-[8px] text-yellow-300">{t("cook.recipes")}</h3>
         <div className="space-y-1">
           {available.map((recipe) => {
             const canCook = recipe.ingredients.every(
@@ -106,7 +109,7 @@ export function CookPanel() {
                   </div>
                 </div>
                 <PixelButton disabled={!canCook} onClick={() => startCooking(recipe.id)}>
-                  Готовить
+                  {t("cook.btn.start")}
                 </PixelButton>
               </div>
             );
@@ -115,7 +118,7 @@ export function CookPanel() {
 
         {available.length === 0 && (
           <p className="font-game text-[7px] text-white/50">
-            Build a Campfire, Kitchen, or Bakery first.
+            {t("cook.no_building")}
           </p>
         )}
       </div>

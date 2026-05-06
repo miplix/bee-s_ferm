@@ -5,10 +5,12 @@ import { BUILDINGS } from "../../data/buildings.data";
 import { TOOLS } from "../../data/tools.data";
 import { PanelShell } from "./PanelShell";
 import { PixelButton } from "../shared/PixelButton";
+import { useT } from "../../i18n/useT";
 
 type Tab = "tools" | "buildings";
 
 export function BuildPanel() {
+  const t = useT();
   const [tab, setTab] = useState<Tab>("tools");
   const level = useStore(selectLevel);
   const buildings = useStore((s) => s.buildings);
@@ -18,7 +20,7 @@ export function BuildPanel() {
   const buildAction = useStore((s) => (s as any).build as (id: string) => void);
 
   return (
-    <PanelShell title="Верстак">
+    <PanelShell title={t("build.title")}>
       {/* Tabs */}
       <div className="flex gap-1 mb-3">
         <button
@@ -26,14 +28,14 @@ export function BuildPanel() {
           className={`font-game text-[8px] px-3 py-1 border border-black/30
             ${tab === "tools" ? "bg-brown-400 text-white" : "bg-brown-600 text-white/60"}`}
         >
-          Инструменты
+          {t("build.tab.tools")}
         </button>
         <button
           onClick={() => setTab("buildings")}
           className={`font-game text-[8px] px-3 py-1 border border-black/30
             ${tab === "buildings" ? "bg-brown-400 text-white" : "bg-brown-600 text-white/60"}`}
         >
-          Постройки
+          {t("build.tab.buildings")}
         </button>
       </div>
 
@@ -52,7 +54,7 @@ export function BuildPanel() {
                   <span className="text-lg">{tool.emoji}</span>
                   <div className="flex-1">
                     <div className="font-game text-[8px] text-white">{tool.name}</div>
-                    <div className="font-game text-[6px] text-white/60">Для: {tool.forResource}</div>
+                    <div className="font-game text-[6px] text-white/60">{t("craft.for")}: {tool.forResource}</div>
                     <div className="flex flex-wrap gap-x-2 mt-0.5">
                       {Object.entries(tool.cost).map(([res, needed]) => {
                         const have = res === "coins" ? coins : (inventory[res] ?? 0);
@@ -67,7 +69,7 @@ export function BuildPanel() {
                   </div>
                   <span className="font-game text-[8px] text-yellow-300 w-6 text-right">{owned}</span>
                   <PixelButton disabled={!canCraft} onClick={() => craftTool(tool.id, 1)}>
-                    Сделать
+                    {t("build.btn.craft")}
                   </PixelButton>
                 </div>
               </div>
@@ -93,8 +95,8 @@ export function BuildPanel() {
                   <div className="flex-1">
                     <div className="font-game text-[8px] text-white flex items-center gap-1">
                       {b.name}
-                      {locked && <span className="text-[7px] text-red-400">🔒 Lv.{b.level}</span>}
-                      {built && <span className="text-[7px] text-green-400">Built</span>}
+                      {locked && <span className="text-[7px] text-red-400">{t("shop.btn.locked", { n: b.level })}</span>}
+                      {built && <span className="text-[7px] text-green-400">{t("build.already_built")}</span>}
                     </div>
                     <div className="font-game text-[6px] text-white/50">{b.desc}</div>
                     {!built && !locked && (
@@ -113,7 +115,7 @@ export function BuildPanel() {
                   </div>
                   {!built && !locked && (
                     <PixelButton disabled={!canAfford} onClick={() => buildAction(b.id)}>
-                      Построить
+                      {t("build.btn.build")}
                     </PixelButton>
                   )}
                 </div>

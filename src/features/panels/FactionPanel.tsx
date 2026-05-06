@@ -2,13 +2,15 @@ import { useStore } from "../../state/store";
 import { PanelShell } from "./PanelShell";
 import { PixelButton } from "../shared/PixelButton";
 import { FACTIONS } from "../../data/factions.data";
+import { useT } from "../../i18n/useT";
 
 export function FactionPanel() {
+  const t = useT();
   const faction = useStore((s) => s.faction);
   const joinFaction = useStore((s) => s.joinFaction);
 
   return (
-    <PanelShell title="Фракции">
+    <PanelShell title={t("faction.title")}>
       {faction ? (
         <ActiveFaction factionId={faction} />
       ) : (
@@ -19,6 +21,7 @@ export function FactionPanel() {
 }
 
 function ActiveFaction({ factionId }: { factionId: string }) {
+  const t = useT();
   const def = FACTIONS.find((f) => f.id === factionId);
   if (!def) return null;
 
@@ -28,17 +31,18 @@ function ActiveFaction({ factionId }: { factionId: string }) {
       <h3 className="font-game text-[10px] text-yellow-300">{def.name}</h3>
       <p className="font-game text-[7px] text-green-400">{def.description}</p>
       <p className="font-game text-[6px] text-white/50">
-        Вы — гордый член фракции {def.name}!
+        {t("faction.proud", { name: def.name })}
       </p>
     </div>
   );
 }
 
 function FactionPicker({ onJoin }: { onJoin: (id: string) => void }) {
+  const t = useT();
   return (
     <div className="space-y-3">
       <p className="font-game text-[7px] text-white/70 text-center mb-2">
-        Выберите фракцию. Выбор необратим!
+        {t("faction.choose")}
       </p>
       {FACTIONS.map((f) => (
         <div
@@ -57,7 +61,7 @@ function FactionPicker({ onJoin }: { onJoin: (id: string) => void }) {
             onClick={() => onJoin(f.id)}
             className="w-full !text-[7px]"
           >
-            Вступить в {f.name}
+            {t("faction.join_to", { name: f.name })}
           </PixelButton>
         </div>
       ))}
