@@ -4,16 +4,12 @@ import { selectLevel } from "../../state/selectors";
 import { PanelShell } from "./PanelShell";
 import { PixelButton } from "../shared/PixelButton";
 import { FISH, BAITS, DAILY_CAST_LIMIT } from "../../data/fishing.data";
+import { useT } from "../../i18n/useT";
 
 type Tab = "cast" | "sell";
 
-const RARITY_RU: Record<string, string> = {
-  common: "обычная",
-  uncommon: "необычная",
-  rare: "редкая",
-};
-
 export function FishingPanel() {
+  const t = useT();
   const [tab, setTab] = useState<Tab>("cast");
   const [lastCatch, setLastCatch] = useState<string | null>(null);
 
@@ -45,14 +41,14 @@ export function FishingPanel() {
   };
 
   return (
-    <PanelShell title="Рыбалка">
+    <PanelShell title={t("fishing.title")}>
       {/* Casts counter */}
       <div className="flex items-center justify-between mb-2 p-2 bg-brown-800 border border-black/30">
         <span className="font-game text-[8px] text-white">
-          Забросов: {fishingState.castsToday}/{DAILY_CAST_LIMIT}
+          {t("fishing.casts_count", { n: fishingState.castsToday, max: DAILY_CAST_LIMIT })}
         </span>
         <span className="font-game text-[7px] text-white/50">
-          {castsLeft} осталось
+          {t("fishing.left", { n: castsLeft })}
         </span>
       </div>
 
@@ -60,7 +56,7 @@ export function FishingPanel() {
       {!hasRod && (
         <div className="mb-2 p-2 bg-red-900/40 border border-red-500/30">
           <span className="font-game text-[7px] text-red-300">
-            Нужна удочка! Создайте на Верстаке (3 дерева + 10 монет).
+            {t("fishing.no_rod")}
           </span>
         </div>
       )}
@@ -70,12 +66,12 @@ export function FishingPanel() {
         <button onClick={() => setTab("cast")}
           className={`font-game text-[8px] px-3 py-1 border border-black/30
             ${tab === "cast" ? "bg-brown-400 text-white" : "bg-brown-600 text-white/60"}`}>
-          Забросить
+          {t("fishing.tab.cast")}
         </button>
         <button onClick={() => setTab("sell")}
           className={`font-game text-[8px] px-3 py-1 border border-black/30
             ${tab === "sell" ? "bg-brown-400 text-white" : "bg-brown-600 text-white/60"}`}>
-          Продать рыбу
+          {t("fishing.tab.sell")}
         </button>
       </div>
 
@@ -87,7 +83,7 @@ export function FishingPanel() {
             if (!fish) return null;
             return (
               <div className="p-2 bg-green-900/40 border border-green-500/30 text-center">
-                <div className="font-game text-[9px] text-green-300">Вы поймали:</div>
+                <div className="font-game text-[9px] text-green-300">{t("fishing.caught")}</div>
                 <div className="text-lg">{fish.emoji}</div>
                 <div className="font-game text-[8px] text-white">{fish.name}</div>
                 <div className="font-game text-[6px] text-yellow-300">+{fish.xp} XP</div>
@@ -96,7 +92,7 @@ export function FishingPanel() {
           })()}
 
           {/* Bait list */}
-          <h4 className="font-game text-[7px] text-yellow-300">Наживка</h4>
+          <h4 className="font-game text-[7px] text-yellow-300">{t("fishing.bait")}</h4>
           {BAITS.map((bait) => {
             const owned = inventory[bait.id] ?? 0;
             const canCast = hasRod && owned > 0 && castsLeft > 0;
@@ -111,23 +107,23 @@ export function FishingPanel() {
                     {bait.name}
                   </div>
                   <div className="font-game text-[6px] text-white/50">
-                    {bait.price > 0 ? `${bait.price.toFixed(0)}м` : "Бесплатно"} | Есть: {owned}
+                    {bait.price > 0 ? `${bait.price.toFixed(0)}м` : t("fishing.bait_free")} | {t("fishing.bait_have", { n: owned })}
                   </div>
                 </div>
                 <PixelButton variant="secondary" disabled={!canBuy}
                   onClick={() => buyBait(bait.id, 1)}>
-                  Купить
+                  {t("fishing.btn.buy")}
                 </PixelButton>
                 <PixelButton disabled={!canCast}
                   onClick={() => handleCast(bait.id)}>
-                  Забросить
+                  {t("fishing.cast")}
                 </PixelButton>
               </div>
             );
           })}
 
           {/* Fish catalog */}
-          <h4 className="font-game text-[7px] text-yellow-300 mt-2">Рыба (Уровень {level})</h4>
+          <h4 className="font-game text-[7px] text-yellow-300 mt-2">{t("fishing.fish_list", { n: level })}</h4>
           {FISH.map((fish) => {
             const locked = fish.minLevel > level;
             const owned = inventory[fish.id] ?? 0;
@@ -145,9 +141,9 @@ export function FishingPanel() {
                       fish.rarity === "uncommon" ? "text-blue-300" :
                       "text-gray-300"
                     }`}>
-                      ({RARITY_RU[fish.rarity] ?? fish.rarity})
+                      ({t(`rarity.${fish.rarity}`)})
                     </span>
-                    {locked && <span className="text-red-400">Ур.{fish.minLevel}</span>}
+                    {locked && <span className="text-red-400">{t("hud.level", { n: fish.minLevel })}</span>}
                   </div>
                   {!locked && (
                     <div className="font-game text-[6px] text-white/50">
@@ -181,7 +177,7 @@ export function FishingPanel() {
                 <PixelButton variant="secondary" disabled={qty < 1}
                   onClick={() => sellFish(fish.id, 1)}>1</PixelButton>
                 <PixelButton variant="secondary" disabled={qty < 1}
-                  onClick={() => sellFish(fish.id, qty)}>Всё</PixelButton>
+                  onClick={() => sellFish(fish.id, qty)}>{t("shop.btn.all")}</PixelButton>
               </div>
             );
           })}

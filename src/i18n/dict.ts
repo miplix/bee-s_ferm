@@ -171,8 +171,23 @@ const ru: Dict = {
   "animals.no_barn":     "Постройте Хлев (Ур.12) чтобы разводить коров.",
 
   "fishing.title":       "Рыбалка",
-  "fishing.cast":        "Закинуть",
+  "fishing.cast":        "Забросить",
+  "fishing.cast_again":  "Забросить",
   "fishing.casts_left":  "Осталось забросов: {n}",
+  "fishing.casts_count": "Забросов: {n}/{max}",
+  "fishing.left":        "{n} осталось",
+  "fishing.no_rod":      "Нужна удочка! Создайте на Верстаке (3 дерева + 10 монет).",
+  "fishing.tab.cast":    "Забросить",
+  "fishing.tab.sell":    "Продать рыбу",
+  "fishing.caught":      "Вы поймали:",
+  "fishing.bait":        "Наживка",
+  "fishing.bait_free":   "Бесплатно",
+  "fishing.bait_have":   "Есть: {n}",
+  "fishing.fish_list":   "Рыба (Уровень {n})",
+  "fishing.btn.buy":     "Купить",
+  "rarity.common":       "обычная",
+  "rarity.uncommon":     "необычная",
+  "rarity.rare":         "редкая",
 
   // ── Skills ────────────────────────────────────────────────────────────
   "skills.title":        "Навыки",
@@ -184,10 +199,13 @@ const ru: Dict = {
   "skills.cost":         "({n} оч.)",
 
   // ── Daily / Chores / Deliveries / Faction ─────────────────────────────
-  "daily.title":         "Ежедневная награда",
+  "daily.title":         "Ежедневный бонус!",
   "daily.streak":        "Серия: {n} дн.",
-  "daily.claim":         "Забрать",
-  "daily.claimed":       "Получено",
+  "daily.day_in_row":    "День {n} подряд",
+  "daily.today":         "Сегодня выпало:",
+  "daily.claim":         "Забрать!",
+  "daily.claimed":       "Получено!",
+  "daily.come_back":     "Сегодня уже забрано.\nВозвращайся завтра.",
 
   "chore.title":         "Поручения",
   "chore.refresh":       "Обновить",
@@ -455,7 +473,22 @@ const en: Dict = {
 
   "fishing.title":       "Fishing",
   "fishing.cast":        "Cast",
+  "fishing.cast_again":  "Cast",
   "fishing.casts_left":  "Casts left: {n}",
+  "fishing.casts_count": "Casts: {n}/{max}",
+  "fishing.left":        "{n} left",
+  "fishing.no_rod":      "Need a fishing rod! Craft at the Workbench (3 wood + 10 coins).",
+  "fishing.tab.cast":    "Cast",
+  "fishing.tab.sell":    "Sell fish",
+  "fishing.caught":      "You caught:",
+  "fishing.bait":        "Bait",
+  "fishing.bait_free":   "Free",
+  "fishing.bait_have":   "Have: {n}",
+  "fishing.fish_list":   "Fish (Lv.{n})",
+  "fishing.btn.buy":     "Buy",
+  "rarity.common":       "common",
+  "rarity.uncommon":     "uncommon",
+  "rarity.rare":         "rare",
 
   // ── Skills ────────────────────────────────────────────────────────────
   "skills.title":        "Skills",
@@ -467,10 +500,13 @@ const en: Dict = {
   "skills.cost":         "({n}pt)",
 
   // ── Daily / Chores / Deliveries / Faction ─────────────────────────────
-  "daily.title":         "Daily reward",
+  "daily.title":         "Daily reward!",
   "daily.streak":        "Streak: {n} days",
-  "daily.claim":         "Claim",
-  "daily.claimed":       "Claimed",
+  "daily.day_in_row":    "Day {n} in a row",
+  "daily.today":         "Today's reward:",
+  "daily.claim":         "Claim!",
+  "daily.claimed":       "Claimed!",
+  "daily.come_back":     "Already claimed today.\nCome back tomorrow.",
 
   "chore.title":         "Chores",
   "chore.refresh":       "Refresh",
