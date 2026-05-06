@@ -9,7 +9,7 @@ const migrations: Record<number, Migration> = {
     ...raw,
     petStates: raw["petStates"] ?? {},
   }),
-  // v3: убираем мутанты из системы — чистим legacy mutant_* items из инвентаря
+  // v3: убирали мутанты — чистили legacy mutant_* items из инвентаря (потом вернули)
   3: (raw) => {
     const inv = (raw["inventory"] ?? {}) as Record<string, number>;
     const cleaned: Record<string, number> = {};
@@ -18,6 +18,11 @@ const migrations: Record<number, Migration> = {
     }
     return { ...raw, inventory: cleaned };
   },
+  // v4: вернули мутантов — добавляем placedMutants: [] (пустой)
+  4: (raw) => ({
+    ...raw,
+    placedMutants: raw["placedMutants"] ?? [],
+  }),
 };
 
 export function migrate(raw: unknown): GameState {

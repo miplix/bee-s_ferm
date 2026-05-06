@@ -30,6 +30,7 @@ import * as cropMachineAct from "./actions/cropMachineActions";
 import * as tradingAct from "./actions/tradingActions";
 import * as factionAct from "./actions/factionActions";
 import * as compostAct from "./actions/compostActions";
+import * as mutantAct from "./actions/mutantActions";
 import { placePending } from "./actions/placementActions";
 import { applyPollenBoost, POLLEN_COST } from "./actions/pollenBoostActions";
 import { claimVipChest as _claimVipChest } from "./actions/vipChestActions";
@@ -163,6 +164,10 @@ export interface StoreActions {
   startCompost(composterId: string): void;
   collectCompost(slotIndex: number): void;
   applyFertilizer(x: number, y: number, fertilizerId: string): void;
+
+  // Mutants
+  placeMutant(mutantId: string): void;
+  unplaceMutant(mutantId: string): void;
 
   // Move
   toggleMoveMode(): void;
@@ -546,6 +551,22 @@ export const useStore = create<Store>()(
         set((s) => {
           const next = compostAct.applyFertilizer(s, x, y, fertilizerId, Date.now());
           if (next === s) { toast("Нельзя применить удобрение", "error"); return s; }
+          return next;
+        }),
+
+      // --- Mutants ---
+      placeMutant: (mutantId) =>
+        set((s) => {
+          const next = mutantAct.placeMutant(s, mutantId);
+          if (next === s) { toast("Не получилось поставить мутанта", "error"); return s; }
+          toast("Мутант размещён на ферме (+10% урожая)", "success");
+          return next;
+        }),
+      unplaceMutant: (mutantId) =>
+        set((s) => {
+          const next = mutantAct.unplaceMutant(s, mutantId);
+          if (next === s) return s;
+          toast("Мутант снят с фермы", "info");
           return next;
         }),
 

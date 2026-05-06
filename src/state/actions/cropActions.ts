@@ -9,6 +9,9 @@ import { getActiveBoosts } from "../../domain/skills/skillEngine";
 import { skillEffectsToBoosts, aggregateBoosts, applyBoostWithSub, applyBoost } from "../../domain/boosts/engine";
 import { pollenProratedMultiplier } from "./pollenBoostActions";
 import { fertilizerProratedMultiplier } from "./compostActions";
+import { mulberry32 } from "../../domain/rng/prng";
+import { buildSeed } from "../../domain/rng/seed";
+import { rollCropMutant, placedMutantCropMultiplier } from "../../domain/mutants/mutants";
 
 /** Plant a crop on a plot cell. Consumes 1 seed from inventory. */
 export function plant(
@@ -99,6 +102,10 @@ export function harvest(
   );
   harvestAmount = harvestAmount * pollenMult;
 
+  // Размещённые на ферме мутанты дают +10% за каждый экземпляр
+  const mutantMult = placedMutantCropMultiplier(cell.cropId, state.placedMutants ?? []);
+  harvestAmount = harvestAmount * mutantMult;
+
   // Round so +50% on a single crop visibly produces +1 (1.5 → 2 with random hint).
   // Using floor + chance for the fractional remainder via deterministic seed.
   const fracPart = harvestAmount - Math.floor(harvestAmount);
@@ -127,6 +134,14 @@ export function harvest(
 
   const inv = { ...state.inventory };
   inv[harvestedCropId] = (inv[harvestedCropId] ?? 0) + finalAmount;
+
+  // Бросок на мутанта (1/1 000 000 для каждой культуры)
+  const seed = buildSeed(state.seed, now, `mutant:crop:${key}`);
+  const rng = mulberry32(seed);
+  const mutant = rollCropMutant(rng, harvestedCropId);
+  if (mutant) {
+    inv[mutant.mutantId] = (inv[mutant.mutantId] ?? 0) + 1;
+  }
 
   return {
     ...state,

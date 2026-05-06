@@ -278,6 +278,11 @@ export interface GameState {
   // Each entry = type of cell that needs placement, count.
   pendingPlacements: Record<string, number>;
 
+  // Размещённые мутанты — каждый id даёт +10% к родительской культуре/животному.
+  // Может содержать дубликаты (стэк бонусов). Хранятся отдельно от cells —
+  // не занимают место на ферме, это passive collectibles.
+  placedMutants: string[];
+
   // anti-bot
   lastMeaningfulActivity: number;
 
@@ -427,6 +432,7 @@ export function createInitialState(): GameState {
     pets: [],
     petStates: {},
     pendingPlacements: {},
+    placedMutants: [],
     vipExpiresAt: null,
     vipChest: null,
     processedTxHashes: [],

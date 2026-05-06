@@ -95,6 +95,10 @@ export function FarmView() {
   const isPanning = useRef(false);
   const panStart = useRef({ x: 0, y: 0 });
   const panOrigin = useRef({ x: 0, y: 0 });
+  // wasPanning: глобальный флаг — если палец/мышь сдвинулись > порога,
+  // следующий клик по клетке игнорируется (это был pan, а не tap).
+  const wasPanning = useRef(false);
+  const PAN_THRESHOLD_PX = 8;
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
@@ -102,21 +106,22 @@ export function FarmView() {
   }, []);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    // Only pan with middle button or when not clicking on interactive elements
-    if (e.button === 1 || (e.button === 0 && e.target === e.currentTarget)) {
+    // Pan: middle button ИЛИ левая кнопка (но в move/placement/boost режимах — не паним)
+    const blockedMode = false; // потенциально расширить: режимы где click важнее
+    if (e.button === 1 || (e.button === 0 && !blockedMode)) {
       isPanning.current = true;
+      wasPanning.current = false;
       panStart.current = { x: e.clientX, y: e.clientY };
       panOrigin.current = { ...pan };
-      e.preventDefault();
     }
   }, [pan]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!isPanning.current) return;
-    setPan({
-      x: panOrigin.current.x + (e.clientX - panStart.current.x),
-      y: panOrigin.current.y + (e.clientY - panStart.current.y),
-    });
+    const dx = e.clientX - panStart.current.x;
+    const dy = e.clientY - panStart.current.y;
+    if (Math.hypot(dx, dy) > PAN_THRESHOLD_PX) wasPanning.current = true;
+    setPan({ x: panOrigin.current.x + dx, y: panOrigin.current.y + dy });
   }, []);
 
   // Touch state for pinch-zoom + single-finger pan
@@ -127,9 +132,13 @@ export function FarmView() {
       const dx = e.touches[0].clientX - e.touches[1].clientX;
       const dy = e.touches[0].clientY - e.touches[1].clientY;
       touchState.current.pinchDist = Math.hypot(dx, dy);
-    } else if (e.touches.length === 1 && e.target === e.currentTarget) {
+      wasPanning.current = true; // pinch = pan
+    } else if (e.touches.length === 1) {
+      // Pan может стартовать с любого места (включая клетки) — клик отменим если сдвинулись
       touchState.current.touch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
       panOrigin.current = { ...pan };
+      panStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      wasPanning.current = false;
     }
   }, [pan]);
 
@@ -141,12 +150,11 @@ export function FarmView() {
       const delta = dist / touchState.current.pinchDist;
       setZoom((z) => Math.min(2, Math.max(0.4, z * delta)));
       touchState.current.pinchDist = dist;
-      e.preventDefault();
     } else if (e.touches.length === 1 && touchState.current.touch) {
-      setPan({
-        x: panOrigin.current.x + (e.touches[0].clientX - touchState.current.touch.x),
-        y: panOrigin.current.y + (e.touches[0].clientY - touchState.current.touch.y),
-      });
+      const dx = e.touches[0].clientX - panStart.current.x;
+      const dy = e.touches[0].clientY - panStart.current.y;
+      if (Math.hypot(dx, dy) > PAN_THRESHOLD_PX) wasPanning.current = true;
+      setPan({ x: panOrigin.current.x + dx, y: panOrigin.current.y + dy });
     }
   }, []);
 
@@ -158,6 +166,16 @@ export function FarmView() {
   const handleMouseUp = useCallback(() => {
     isPanning.current = false;
   }, []);
+
+  /** Wrapper: выполняет clickCell только если не было pan-жеста. */
+  const guardedClick = useCallback((cx: number, cy: number) => {
+    if (wasPanning.current) {
+      // съедаем клик после pan-а; флаг сбрасывается при следующем pointerdown
+      wasPanning.current = false;
+      return;
+    }
+    clickCell(cx, cy);
+  }, [clickCell]);
 
   if (location === "henhouse") return <HenhouseScreen />;
   if (location === "barn") return <BarnScreen />;
@@ -395,7 +413,7 @@ export function FarmView() {
             return (
               <div key={`${gx}-${gy}`} style={{ ...grassStyle, borderRadius: cornerRadius }}>
                 <CellView cell={cell} cx={cx} cy={cy}
-                  onClick={() => clickCell(cx, cy)} selectedTool={selectedTool}
+                  onClick={() => guardedClick(cx, cy)} selectedTool={selectedTool}
                   moveMode={moveMode} moveSource={moveSource}
                   hoveredParent={hoveredParent} setHoveredParent={setHoveredParent}
                   buildingLevels={buildingLevels} beehives={beehives}

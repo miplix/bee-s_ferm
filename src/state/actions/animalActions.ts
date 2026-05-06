@@ -4,6 +4,9 @@ import { ANIMAL_COSTS, getAnimalLevel, ANIMAL_CAPACITY } from "../../data/animal
 import { isReady } from "../../domain/time/time";
 import { getActiveBoosts } from "../../domain/skills/skillEngine";
 import { skillEffectsToBoosts, aggregateBoosts, applyBoost } from "../../domain/boosts/engine";
+import { mulberry32 } from "../../domain/rng/prng";
+import { buildSeed } from "../../domain/rng/seed";
+import { rollAnimalMutant, placedMutantAnimalMultiplier } from "../../domain/mutants/mutants";
 import { log } from "../../lib/log";
 
 const CURE_COST: Record<string, number> = { lemon: 1, honey: 1 };
@@ -118,8 +121,20 @@ export function collectAnimal(
   // Diseased animals produce half (TZ 7.3)
   if (animal.diseased) amount = Math.max(1, Math.floor(amount / 2));
 
+  // Размещённые на ферме мутанты-животные дают +10% за каждый экземпляр
+  const mutantMult = placedMutantAnimalMultiplier(animal.kind, state.placedMutants ?? []);
+  amount = amount * mutantMult;
+
   const finalAmount = Math.floor(amount);
   inv[product] = (inv[product] ?? 0) + finalAmount;
+
+  // Бросок на мутанта (1/10 000 за сбор)
+  const seed = buildSeed(state.seed, now, `mutant:animal:${animalId}`);
+  const rng = mulberry32(seed);
+  const mutant = rollAnimalMutant(rng, animal.kind);
+  if (mutant) {
+    inv[mutant.mutantId] = (inv[mutant.mutantId] ?? 0) + 1;
+  }
 
   const newAnimals = [...state.animals];
   newAnimals[idx] = {
