@@ -1,8 +1,10 @@
 import { useStore } from "../../state/store";
 import { PanelShell } from "./PanelShell";
 import { PixelButton } from "../shared/PixelButton";
+import { useT } from "../../i18n/useT";
 
 export function ChorePanel() {
+  const t = useT();
   const chores = useStore((s) => s.chores);
   const claimChore = useStore((s) => s.claimChore);
   const refreshChores = useStore((s) => s.refreshChores);
@@ -19,21 +21,21 @@ export function ChorePanel() {
   const claimedCount = chores.active.filter((c) => c.claimed).length;
 
   return (
-    <PanelShell title="Задания">
+    <PanelShell title={t("chore.title")}>
       {/* Header */}
       <div className="flex items-center justify-between mb-2 p-2 bg-brown-800 border border-black/30">
         <span className="font-game text-[8px] text-white">
-          Ежедневные задания
+          {t("chore.daily")}
         </span>
         <span className="font-game text-[7px] text-white/50">
-          {claimedCount}/{chores.active.length} выполнено
+          {t("chore.completed", { n: claimedCount, max: chores.active.length })}
         </span>
       </div>
 
       {allClaimed && (
         <div className="p-3 mb-2 bg-green-900/40 border border-green-500/30 text-center">
           <span className="font-game text-[8px] text-green-300">
-            Все задания выполнены! Возвращайтесь завтра.
+            {t("chore.all_done")}
           </span>
         </div>
       )}
@@ -96,12 +98,12 @@ export function ChorePanel() {
                   disabled={!isComplete}
                   onClick={() => claimChore(chore.choreId)}
                 >
-                  {isComplete ? "Забрать!" : "В процессе..."}
+                  {isComplete ? t("chore.claim") : t("chore.in_progress")}
                 </PixelButton>
               )}
               {chore.claimed && (
                 <span className="font-game text-[7px] text-green-400">
-                  Получено!
+                  {t("chore.claimed")}
                 </span>
               )}
             </div>

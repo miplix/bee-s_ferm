@@ -3,8 +3,13 @@ import { PanelShell } from "./PanelShell";
 import { PixelButton } from "../shared/PixelButton";
 import { CooldownTimer } from "../shared/CooldownTimer";
 import { DELIVERY_REFRESH_MS } from "../../data/deliveries.data";
+import { useT } from "../../i18n/useT";
+import { getItemName } from "../../i18n/itemNames";
+import type { Language } from "../../i18n/types";
 
 export function DeliveryPanel() {
+  const t = useT();
+  const lang = useStore((s) => (s as any).language as Language) ?? "ru";
   const inventory = useStore((s) => s.inventory);
   const deliveries = useStore((s) => s.deliveries);
   const completeDelivery = useStore((s) => s.completeDelivery);
@@ -23,14 +28,14 @@ export function DeliveryPanel() {
   }
 
   return (
-    <PanelShell title="Доставки">
+    <PanelShell title={t("delivery.title")}>
       {/* Stats */}
       <div className="flex items-center justify-between mb-2 p-2 bg-brown-800 border border-black/30">
         <span className="font-game text-[8px] text-white">
-          Выполнено: {deliveries.completed}
+          {t("delivery.completed", { n: deliveries.completed })}
         </span>
         <span className="font-game text-[7px] text-white/50">
-          {deliveries.active.length} активных
+          {t("delivery.active", { n: deliveries.active.length })}
         </span>
       </div>
 
@@ -39,7 +44,7 @@ export function DeliveryPanel() {
         {deliveries.active.length === 0 && (
           <div className="p-3 text-center">
             <span className="font-game text-[8px] text-white/50">
-              Нет доступных заданий. Загляните позже!
+              {t("delivery.empty")}
             </span>
           </div>
         )}
@@ -78,7 +83,7 @@ export function DeliveryPanel() {
 
               {/* Requested items */}
               <div className="space-y-0.5 mb-1.5">
-                <span className="font-game text-[7px] text-white/60">Needs:</span>
+                <span className="font-game text-[7px] text-white/60">{t("delivery.needs")}</span>
                 {delivery.request.map((req, i) => {
                   const have = inventory[req.itemId] ?? 0;
                   const enough = have >= req.qty;
@@ -92,7 +97,7 @@ export function DeliveryPanel() {
                           enough ? "text-green-400" : "text-red-400"
                         }`}
                       >
-                        {req.itemId} ({have}/{req.qty})
+                        {getItemName(req.itemId, lang)} ({have}/{req.qty})
                       </span>
                       {enough && <span className="text-[8px]">&#x2705;</span>}
                     </div>
@@ -102,7 +107,7 @@ export function DeliveryPanel() {
 
               {/* Rewards */}
               <div className="flex items-center gap-2 mb-1.5">
-                <span className="font-game text-[6px] text-white/60">Reward:</span>
+                <span className="font-game text-[6px] text-white/60">{t("delivery.reward")}</span>
                 {delivery.reward.coins > 0 && (
                   <span className="font-game text-[7px] text-yellow-300">
                     {delivery.reward.coins}c
@@ -125,7 +130,7 @@ export function DeliveryPanel() {
                 disabled={!canComplete || isExpired}
                 onClick={() => completeDelivery(delivery.id)}
               >
-                {isExpired ? "Истекло" : canComplete ? "Доставить!" : "Нет товаров"}
+                {isExpired ? t("delivery.expired") : canComplete ? t("delivery.complete") : t("delivery.no_items")}
               </PixelButton>
             </div>
           );
