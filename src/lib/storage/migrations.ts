@@ -9,6 +9,15 @@ const migrations: Record<number, Migration> = {
     ...raw,
     petStates: raw["petStates"] ?? {},
   }),
+  // v3: убираем мутанты из системы — чистим legacy mutant_* items из инвентаря
+  3: (raw) => {
+    const inv = (raw["inventory"] ?? {}) as Record<string, number>;
+    const cleaned: Record<string, number> = {};
+    for (const [id, qty] of Object.entries(inv)) {
+      if (!id.startsWith("mutant_")) cleaned[id] = qty;
+    }
+    return { ...raw, inventory: cleaned };
+  },
 };
 
 export function migrate(raw: unknown): GameState {

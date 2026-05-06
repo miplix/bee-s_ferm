@@ -4,9 +4,6 @@ import { ANIMAL_COSTS, getAnimalLevel, ANIMAL_CAPACITY } from "../../data/animal
 import { isReady } from "../../domain/time/time";
 import { getActiveBoosts } from "../../domain/skills/skillEngine";
 import { skillEffectsToBoosts, aggregateBoosts, applyBoost } from "../../domain/boosts/engine";
-import { mulberry32 } from "../../domain/rng/prng";
-import { buildSeed } from "../../domain/rng/seed";
-import { rollAnimalMutant } from "../../domain/mutants/mutants";
 import { log } from "../../lib/log";
 
 const CURE_COST: Record<string, number> = { lemon: 1, honey: 1 };
@@ -123,14 +120,6 @@ export function collectAnimal(
 
   const finalAmount = Math.floor(amount);
   inv[product] = (inv[product] ?? 0) + finalAmount;
-
-  // Mutant roll using seeded PRNG
-  const seed = buildSeed(state.seed, now, `mutant:animal:${animalId}:${now}`);
-  const rng = mulberry32(seed);
-  const mutant = rollAnimalMutant(rng, animal.kind);
-  if (mutant) {
-    inv[mutant.mutantId] = (inv[mutant.mutantId] ?? 0) + mutant.bonus;
-  }
 
   const newAnimals = [...state.animals];
   newAnimals[idx] = {

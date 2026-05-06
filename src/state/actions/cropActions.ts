@@ -7,9 +7,6 @@ import { elapsed } from "../../domain/time/time";
 import { getCurrentSeason, isCropInSeason } from "../../domain/seasons/seasons";
 import { getActiveBoosts } from "../../domain/skills/skillEngine";
 import { skillEffectsToBoosts, aggregateBoosts, applyBoostWithSub, applyBoost } from "../../domain/boosts/engine";
-import { mulberry32 } from "../../domain/rng/prng";
-import { buildSeed } from "../../domain/rng/seed";
-import { rollCropMutant } from "../../domain/mutants/mutants";
 import { pollenProratedMultiplier } from "./pollenBoostActions";
 import { fertilizerProratedMultiplier } from "./compostActions";
 
@@ -130,14 +127,6 @@ export function harvest(
 
   const inv = { ...state.inventory };
   inv[harvestedCropId] = (inv[harvestedCropId] ?? 0) + finalAmount;
-
-  // Mutant roll using seeded PRNG
-  const seed = buildSeed(state.seed, now, `mutant:crop:${key}:${now}`);
-  const rng = mulberry32(seed);
-  const mutant = rollCropMutant(rng, harvestedCropId);
-  if (mutant) {
-    inv[mutant.mutantId] = (inv[mutant.mutantId] ?? 0) + mutant.bonus;
-  }
 
   return {
     ...state,

@@ -606,10 +606,17 @@ export const useStore = create<Store>()(
         const rawCell = s.cells[key];
         if (rawCell?.parentKey) key = rawCell.parentKey;
 
-        // Pollen boost mode — выход после первого клика (попадание или промах)
+        // Pollen boost mode — режим остаётся активен пока попадаем по
+        // подходящей неудобренной клетке. Выход только при «промахе»:
+        // клик мимо, по уже удобренной клетке, или нехватке пыльцы.
         if (s.pollenBoostMode) {
+          const beforePollen = s.pollen ?? 0;
           get().applyPollenBoost(cx, cy);
-          set({ pollenBoostMode: false });
+          const afterPollen = get().pollen ?? 0;
+          // Если пыльца не изменилась — никакой апплай не произошёл (промах)
+          if (beforePollen === afterPollen) {
+            set({ pollenBoostMode: false });
+          }
           return;
         }
 

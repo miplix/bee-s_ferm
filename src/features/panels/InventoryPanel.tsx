@@ -25,13 +25,12 @@ export function InventoryPanel() {
   const seeds = entries.filter(([id]) => id.endsWith("_seed"));
   const tools = entries.filter(([id]) => ["axe", "stone_pickaxe", "iron_pickaxe", "gold_pickaxe", "fishing_rod"].includes(id));
   const fertilizers = entries.filter(([id]) => FERTILIZER_IDS.has(id));
-  const mutants = entries.filter(([id]) => id.startsWith("mutant_"));
   const meals = entries.filter(([id]) => id.startsWith("meal_"));
   const resources = entries.filter(([id]) =>
     !id.endsWith("_seed") &&
     !["axe", "stone_pickaxe", "iron_pickaxe", "gold_pickaxe", "fishing_rod"].includes(id) &&
     !FERTILIZER_IDS.has(id) &&
-    !id.startsWith("mutant_") &&
+    !id.startsWith("mutant_") &&  // мутанты убраны из системы — фильтруем legacy items
     !id.startsWith("meal_")
   );
 
@@ -102,17 +101,6 @@ export function InventoryPanel() {
           </Section>
         )}
 
-        {mutants.length > 0 && (
-          <Section title="Мутанты (редкие)">
-            {mutants.map(([id, qty]) => (
-              <ItemRow key={id} id={id} qty={qty} />
-            ))}
-            <p className="font-game text-[6px] text-white/40 mt-1">
-              Редкий дроп с урожая. Можно продать на ярмарке за ×10 от обычной цены.
-            </p>
-          </Section>
-        )}
-
         {resources.length > 0 && (
           <Section title="Ресурсы">
             {resources.map(([id, qty]) => (
@@ -176,7 +164,6 @@ function itemIcon(id: string): string {
     return icons[crop] ?? "🌱";
   }
   if (id.startsWith("meal_")) return "🍽️";
-  if (id.startsWith("mutant_")) return "✨";
   return icons[id] ?? "📦";
 }
 
@@ -198,26 +185,11 @@ const RU_NAMES: Record<string, string> = {
   earthworm: "Дождевой червь", grub: "Личинка", red_wiggler: "Красный червь",
 };
 
-const MUTANT_RU_NAMES: Record<string, string> = {
-  mutant_sunflower: "Звёздный подсолнух",
-  mutant_potato:    "Могучая картошка",
-  mutant_pumpkin:   "Радикальная тыква",
-  mutant_carrot:    "Космическая морковь",
-  mutant_cabbage:   "Колоссальная капуста",
-  mutant_beetroot:  "Богатая свёкла",
-  mutant_corn:      "Небесная кукуруза",
-  mutant_wheat:     "Чудо-пшеница",
-  mutant_chicken:   "Мутант-курица",
-  mutant_cow:       "Мутант-корова",
-  mutant_sheep:     "Мутант-овца",
-};
-
 function formatItemName(id: string): string {
   if (id.endsWith("_seed")) {
     const crop = id.replace("_seed", "");
     return (RU_NAMES[crop] ?? crop) + " (семя)";
   }
   if (id.startsWith("meal_")) return "Блюдо: " + id.replace("meal_", "").replace(/_/g, " ");
-  if (id.startsWith("mutant_")) return MUTANT_RU_NAMES[id] ?? "Мутант: " + id.replace("mutant_", "");
   return RU_NAMES[id] ?? id.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }

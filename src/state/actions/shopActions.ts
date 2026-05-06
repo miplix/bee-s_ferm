@@ -142,42 +142,26 @@ export function sell(
   const current = state.inventory[itemId] ?? 0;
   if (current < qty) return state;
 
-  // Look up sell price — try mutants (×10 base), then crops, fruits, greenhouse, resources
+  // Look up sell price — crops first, then fruits, then greenhouse, then resources
   let price = 0;
-  if (itemId.startsWith("mutant_")) {
-    // Mutants sell for 10× the base crop/animal price
-    const baseId = itemId.replace("mutant_", "");
-    try {
-      const crop = getCropDef(baseId as CropId);
-      price = crop.sellPrice * 10;
-    } catch {
-      const ANIMAL_PRODUCT_BASE: Record<string, number> = {
-        chicken: 5, cow: 10, sheep: 8,
-      };
-      price = (ANIMAL_PRODUCT_BASE[baseId] ?? 1) * 10;
-    }
-  } else {
-    try {
-      const crop = getCropDef(itemId as CropId);
-      price = crop.sellPrice;
-    } catch {
-      // Try fruit
-      const fruit = FRUITS.find((f) => f.id === itemId);
-      if (fruit) {
-        price = fruit.sellPrice;
+  try {
+    const crop = getCropDef(itemId as CropId);
+    price = crop.sellPrice;
+  } catch {
+    const fruit = FRUITS.find((f) => f.id === itemId);
+    if (fruit) {
+      price = fruit.sellPrice;
+    } else {
+      const ghCrop = GREENHOUSE_CROPS.find((c) => c.id === itemId);
+      if (ghCrop) {
+        price = ghCrop.sellPrice;
       } else {
-        // Try greenhouse crop
-        const ghCrop = GREENHOUSE_CROPS.find((c) => c.id === itemId);
-        if (ghCrop) {
-          price = ghCrop.sellPrice;
-        } else {
-          // Deflationary prices: selling resources is very unfavorable vs using for expansion
-          const RESOURCE_SELL: Record<string, number> = {
-            wood: 0.02, stone: 0.05, iron: 0.20, gold: 1.00,
-            egg: 0.30, milk: 0.80, wool: 0.50, honey: 5.00,
-          };
-          price = RESOURCE_SELL[itemId] ?? 0;
-        }
+        // Deflationary prices: selling resources is very unfavorable vs using for expansion
+        const RESOURCE_SELL: Record<string, number> = {
+          wood: 0.02, stone: 0.05, iron: 0.20, gold: 1.00,
+          egg: 0.30, milk: 0.80, wool: 0.50, honey: 5.00,
+        };
+        price = RESOURCE_SELL[itemId] ?? 0;
       }
     }
   }
