@@ -169,6 +169,11 @@ export interface StoreActions {
   placeMutant(mutantId: string): void;
   unplaceMutant(mutantId: string): void;
 
+  // i18n + audio
+  setLanguage(lang: "ru" | "en"): void;
+  setMusicEnabled(on: boolean): void;
+  setSfxEnabled(on: boolean): void;
+
   // Move
   toggleMoveMode(): void;
   // Pending placements (overflow from expansion)
@@ -569,6 +574,11 @@ export const useStore = create<Store>()(
           toast("Мутант снят с фермы", "info");
           return next;
         }),
+
+      // --- i18n + audio settings ---
+      setLanguage: (lang) => set({ language: lang } as any),
+      setMusicEnabled: (on) => set({ musicEnabled: on } as any),
+      setSfxEnabled: (on) => set({ sfxEnabled: on } as any),
 
       // --- Pending placements (overflow inventory) ---
       placementType: null as string | null,

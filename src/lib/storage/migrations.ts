@@ -23,6 +23,13 @@ const migrations: Record<number, Migration> = {
     ...raw,
     placedMutants: raw["placedMutants"] ?? [],
   }),
+  // v5: i18n + audio: language="ru", musicEnabled=true, sfxEnabled=true
+  5: (raw) => ({
+    ...raw,
+    language: raw["language"] ?? "ru",
+    musicEnabled: raw["musicEnabled"] ?? true,
+    sfxEnabled: raw["sfxEnabled"] ?? true,
+  }),
 };
 
 export function migrate(raw: unknown): GameState {

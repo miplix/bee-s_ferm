@@ -294,6 +294,11 @@ export interface GameState {
 
   // NEAR (Etap 8)
   nearAccount?: string | null;
+
+  // i18n + audio settings
+  language?: "ru" | "en";          // default "ru"
+  musicEnabled?: boolean;          // default true
+  sfxEnabled?: boolean;            // default true
 }
 
 // --- Cell key helper ---
@@ -433,6 +438,9 @@ export function createInitialState(): GameState {
     petStates: {},
     pendingPlacements: {},
     placedMutants: [],
+    language: "ru",
+    musicEnabled: true,
+    sfxEnabled: true,
     vipExpiresAt: null,
     vipChest: null,
     processedTxHashes: [],

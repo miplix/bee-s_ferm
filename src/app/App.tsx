@@ -13,10 +13,14 @@ import { PollenBoostButton } from "../features/farm/PollenBoostButton";
 import { VipChest } from "../features/farm/VipChest";
 import { usePassiveTick } from "../hooks/usePassiveTick";
 import { useStore } from "../state/store";
+import { startMusic, setMusicEnabled } from "../lib/music";
 
 function GameRoot() {
   usePassiveTick();
   const setPanel = useStore((s) => s.setPanel);
+  const musicEnabled = useStore((s) => (s as any).musicEnabled as boolean) ?? true;
+
+  // Hotkey D → dev panel
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
@@ -28,6 +32,30 @@ function GameRoot() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [setPanel]);
+
+  // Background music: запуск ПОСЛЕ первого пользовательского клика (autoplay-policy)
+  useEffect(() => {
+    let triggered = false;
+    const onFirstInteract = () => {
+      if (triggered) return;
+      triggered = true;
+      startMusic(musicEnabled);
+      window.removeEventListener("pointerdown", onFirstInteract);
+      window.removeEventListener("keydown", onFirstInteract);
+    };
+    window.addEventListener("pointerdown", onFirstInteract, { once: false });
+    window.addEventListener("keydown", onFirstInteract, { once: false });
+    return () => {
+      window.removeEventListener("pointerdown", onFirstInteract);
+      window.removeEventListener("keydown", onFirstInteract);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Реакция на тоггл музыки в Settings
+  useEffect(() => {
+    setMusicEnabled(musicEnabled);
+  }, [musicEnabled]);
 
   return (
     <LoginGate>

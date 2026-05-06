@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import { useStore } from "../../state/store";
 import { useTick } from "../../hooks/useTick";
+import { useT } from "../../i18n/useT";
 import { getCropDef } from "../../data/crops.data";
 import { FRUITS } from "../../data/fruits.data";
 import { FLOWERS } from "../../data/flowers.data";
@@ -41,6 +42,7 @@ function makeGrassStyle(island: string, season: string): React.CSSProperties {
 }
 
 export function FarmView() {
+  const t = useT();
   useTick(1000);
   const blocks = useStore((s) => s.blocks);
   const cells = useStore((s) => s.cells);
@@ -367,7 +369,7 @@ export function FarmView() {
                   style={{ width: CELL_SIZE, height: CELL_SIZE }}>
                   {isCenter && (pendingReady ? (
                     <button onClick={completeExpansion} className="font-game text-[7px] text-green-300 animate-pulse cursor-pointer">
-                      Done!
+                      {t("farm.expansion.done")}
                     </button>
                   ) : (
                     <div className="flex flex-col items-center">
@@ -432,12 +434,12 @@ export function FarmView() {
           <div className="bg-brown-700 border-2 border-black p-4 min-w-[260px] shadow-lg"
             onClick={(e) => e.stopPropagation()}>
             <h3 className="font-game text-[10px] text-yellow-300 mb-3">
-              Expansion {nextExp.id}
+              {t("farm.expansion.title", { n: nextExp.id })}
             </h3>
 
             {/* Cost */}
             <div className="space-y-1 mb-3">
-              <p className="font-game text-[8px] text-white/70">Cost:</p>
+              <p className="font-game text-[8px] text-white/70">{t("farm.expansion.cost")}</p>
               {Object.entries(nextExp.cost).map(([res, needed]) => {
                 const have = res === "coins" ? coins : (inventory[res] ?? 0);
                 const ok = res === "coins" ? have >= needed - 0.001 : have >= needed;
@@ -445,7 +447,7 @@ export function FarmView() {
                   <div key={res} className="flex justify-between font-game text-[8px]">
                     <span className="text-white">{res}: {needed}</span>
                     <span className={ok ? "text-green-400" : "text-red-400"}>
-                      (have: {Math.floor(have)})
+                      {t("farm.expansion.have", { have: Math.floor(have) })}
                     </span>
                   </div>
                 );
@@ -454,21 +456,21 @@ export function FarmView() {
 
             {/* Adds */}
             <div className="mb-3">
-              <p className="font-game text-[8px] text-white/70">Добавляет:</p>
+              <p className="font-game text-[8px] text-white/70">{t("farm.expansion.adds")}</p>
               <p className="font-game text-[7px] text-white">
-                +{nextExp.adds.plots} грядок, +{nextExp.adds.trees} деревьев
-                {(nextExp.adds.rocks ?? 0) > 0 && `, +${nextExp.adds.rocks} камень`}
-                {(nextExp.adds.iron ?? 0) > 0 && `, +${nextExp.adds.iron} железо`}
-                {(nextExp.adds.gold ?? 0) > 0 && `, +${nextExp.adds.gold} золото`}
-                {(nextExp.adds.crimstone ?? 0) > 0 && `, +${nextExp.adds.crimstone} 🔴 crimstone`}
-                {(nextExp.adds.flower_beds ?? 0) > 0 && `, +${nextExp.adds.flower_beds} 🌸 цветники`}
+                +{nextExp.adds.plots} {nextExp.adds.plots === 1 ? "plot" : "plots"}, +{nextExp.adds.trees} {nextExp.adds.trees === 1 ? "tree" : "trees"}
+                {(nextExp.adds.rocks ?? 0) > 0 && `, +${nextExp.adds.rocks} 🪨`}
+                {(nextExp.adds.iron ?? 0) > 0 && `, +${nextExp.adds.iron} ⛓️`}
+                {(nextExp.adds.gold ?? 0) > 0 && `, +${nextExp.adds.gold} 💰`}
+                {(nextExp.adds.crimstone ?? 0) > 0 && `, +${nextExp.adds.crimstone} 🔴`}
+                {(nextExp.adds.flower_beds ?? 0) > 0 && `, +${nextExp.adds.flower_beds} 🌸`}
               </p>
             </div>
 
             {/* Level check */}
             {!levelOk && (
               <p className="font-game text-[7px] text-red-400 mb-2">
-                Requires level {nextExp.minLevel} (you: {level})
+                {t("farm.expansion.requires_lv", { n: nextExp.minLevel, cur: level })}
               </p>
             )}
 
@@ -478,10 +480,10 @@ export function FarmView() {
                 disabled={!canAfford || !levelOk}
                 onClick={() => { startExpansion(); setShowExpandPopup(false); }}
               >
-                Build
+                {t("farm.expansion.build")}
               </PixelButton>
               <PixelButton variant="secondary" onClick={() => setShowExpandPopup(false)}>
-                Cancel
+                {t("farm.expansion.cancel")}
               </PixelButton>
             </div>
           </div>
@@ -509,6 +511,7 @@ interface CellViewProps {
 }
 
 function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, hoveredParent, setHoveredParent, buildingLevels, beehives, activeBeehiveSlots }: CellViewProps) {
+  const t = useT();
   const now = Date.now();
   const key = cellKey(cx, cy);
   const isSource = moveSource === key;
@@ -799,7 +802,7 @@ function CellView({ cell, cx, cy, onClick, selectedTool, moveMode, moveSource, h
           </span>
         )}
 
-        {exhausted && <span className="font-game text-[6px] text-red-400">Empty</span>}
+        {exhausted && <span className="font-game text-[6px] text-red-400">{t("farm.empty")}</span>}
 
         {/* Hit progress bar spanning 2x2 */}
         {hits > 0 && !onCooldown && !exhausted && (

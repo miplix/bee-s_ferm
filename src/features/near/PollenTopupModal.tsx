@@ -3,11 +3,12 @@ import { sendPollenToken, getAccount, POLLEN_TOKEN_CONTRACT, POLLEN_RECIPIENT } 
 import { useStore } from "../../state/store";
 import { creditPollen } from "../../state/actions/nearPaymentActions";
 import { toast } from "../../state/toastStore";
+import { useT } from "../../i18n/useT";
 
 /** Modal: send pollen.tkn.near FT to recipient → credit pollen 1:1 in game. */
 export function PollenTopupModal({ onClose }: { onClose: () => void }) {
+  const t = useT();
   const [amount, setAmount] = useState("100");
-  // Token has decimals=0 → only whole numbers
   const [busy, setBusy] = useState(false);
   const [lastTx, setLastTx] = useState<string | null>(null);
   const account = getAccount();
@@ -15,16 +16,16 @@ export function PollenTopupModal({ onClose }: { onClose: () => void }) {
 
   const handleSend = async () => {
     const n = parseInt(amount, 10);
-    if (!isFinite(n) || n <= 0) { toast("Введи целое число > 0", "error"); return; }
-    if (!account) { toast("Подключи кошелёк", "error"); return; }
+    if (!isFinite(n) || n <= 0) { toast(t("topup.error.invalid"), "error"); return; }
+    if (!account) { toast(t("toast.wallet_required"), "error"); return; }
     setBusy(true);
     try {
       const txHash = await sendPollenToken(n);
       useStore.setState((s) => creditPollen(s as any, n, txHash) as any);
       setLastTx(txHash);
-      toast(`+${n} 🌼 пыльцы зачислено`, "success");
+      toast(t("topup.success", { n }), "success");
     } catch (e: any) {
-      toast(`Ошибка: ${e.message ?? e}`, "error");
+      toast(t("topup.error.send", { msg: e.message ?? String(e) }), "error");
     } finally {
       setBusy(false);
     }
@@ -33,17 +34,17 @@ export function PollenTopupModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70" onClick={onClose}>
       <div className="bg-brown-800 border-2 border-yellow-600 p-4 w-[320px]" onClick={(e) => e.stopPropagation()}>
-        <h2 className="font-game text-[12px] text-yellow-300 mb-3 text-center">🌼 Пополнить пыльцу</h2>
+        <h2 className="font-game text-[12px] text-yellow-300 mb-3 text-center">{t("topup.title")}</h2>
 
         <div className="bg-brown-900/60 border border-black/30 p-2 mb-3 text-center">
-          <div className="font-game text-[8px] text-white/80">Сейчас в игре</div>
-          <div className="font-game text-[14px] text-yellow-300">🌼 {currentPollen.toFixed(1)}</div>
+          <div className="font-game text-[8px] text-white/80">{t("topup.current")}</div>
+          <div className="font-game text-[14px] text-yellow-300">🌼 {currentPollen.toFixed(2)}</div>
         </div>
 
         <div className="font-game text-[7px] text-white/60 mb-2 leading-relaxed">
-          Токен: <span className="text-yellow-200">{POLLEN_TOKEN_CONTRACT}</span><br/>
-          Получатель: <span className="text-yellow-200">{POLLEN_RECIPIENT}</span><br/>
-          Курс 1:1 — сколько токенов отправишь, столько пыльцы зачислится.
+          {t("topup.token", { contract: POLLEN_TOKEN_CONTRACT })}<br/>
+          {t("topup.recipient", { recipient: POLLEN_RECIPIENT })}<br/>
+          {t("topup.rate")}
         </div>
 
         <input
@@ -52,7 +53,7 @@ export function PollenTopupModal({ onClose }: { onClose: () => void }) {
           step="1"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
-          placeholder="Кол-во пыльцы"
+          placeholder={t("topup.amount_placeholder")}
           className="w-full px-2 py-2 mb-3 font-game text-[10px] text-black border border-black"
         />
 
@@ -62,14 +63,16 @@ export function PollenTopupModal({ onClose }: { onClose: () => void }) {
             disabled={busy}
             className="font-game text-[8px] px-3 py-2 border-2 border-black bg-purple-700 text-yellow-200 hover:bg-purple-600 disabled:opacity-50"
           >
-            {busy ? "..." : `Отправить ${amount} 🌼`}
+            {busy ? "..." : t("topup.btn.send", { n: amount })}
           </button>
-          <button onClick={onClose} className="font-game text-[8px] px-2 py-2 border border-black bg-brown-600 text-white">отмена</button>
+          <button onClick={onClose} className="font-game text-[8px] px-2 py-2 border border-black bg-brown-600 text-white">
+            {t("btn.cancel")}
+          </button>
         </div>
 
         {lastTx && (
           <div className="font-game text-[6px] text-green-300 text-center mt-2">
-            ✓ Tx: <a
+            ✓ {t("topup.tx_label")} <a
               href={`https://nearblocks.io/txns/${lastTx}`}
               target="_blank" rel="noopener noreferrer"
               className="underline"

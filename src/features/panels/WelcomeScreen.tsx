@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { PixelButton } from "../shared/PixelButton";
+import { useT } from "../../i18n/useT";
 
 const WELCOME_KEY = "near-farm-welcome-v1";
 
@@ -10,6 +11,7 @@ export function useWelcomeShown() {
 }
 
 export function WelcomeScreen() {
+  const t = useT();
   const [step, setStep] = useState(0);
   const [dismissed, setDismissed] = useState(() =>
     typeof localStorage !== "undefined"
@@ -20,22 +22,10 @@ export function WelcomeScreen() {
   if (dismissed) return null;
 
   const steps = [
-    {
-      title: "Добро пожаловать на Пчело-ферму! 🐝",
-      body: "Стройте свою пчелиную ферму, выращивайте культуры, добывайте ресурсы и зарабатывайте пыльцу!",
-    },
-    {
-      title: "Как начать 🌱",
-      body: "Нажмите на Market (🏪) чтобы купить семена. Затем кликните на коричневые грядки (🟫) на ферме чтобы посадить.",
-    },
-    {
-      title: "Ресурсы и расширение 🌳",
-      body: "Рубите деревья (🌳) и добывайте камень (🪨). Откройте панель расширения через Workbench (🔨) чтобы разблокировать новые земли.",
-    },
-    {
-      title: "Пчёлы и пыльца 🍯",
-      body: "Постройте ульи и собирайте пыльцу! Пыльца — особый ресурс для редких крафтов и наград.",
-    },
+    { title: t("welcome.step1.title"), body: t("welcome.step1.desc") },
+    { title: t("welcome.step2.title"), body: t("welcome.step2.desc") },
+    { title: t("welcome.step3.title"), body: t("welcome.step3.desc") },
+    { title: t("welcome.step4.title"), body: t("welcome.step4.desc") },
   ];
 
   const current = steps[step];
@@ -70,15 +60,15 @@ export function WelcomeScreen() {
           {!isLast ? (
             <>
               <PixelButton onClick={() => setStep((s) => s + 1)}>
-                Далее
+                {t("welcome.continue")}
               </PixelButton>
               <PixelButton variant="secondary" onClick={dismiss}>
-                Пропустить
+                {t("welcome.skip")}
               </PixelButton>
             </>
           ) : (
             <PixelButton onClick={dismiss}>
-              Начать игру!
+              {t("welcome.start")}
             </PixelButton>
           )}
         </div>

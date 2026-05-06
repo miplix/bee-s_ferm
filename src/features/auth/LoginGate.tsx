@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { connectNear, getAccount, initNear, onAccount } from "../../lib/near/wallet";
+import { useT } from "../../i18n/useT";
 
 /**
  * Полноэкранный gate — пока NEAR-кошелёк не подключён, игра скрыта.
  * Показывает приветствие + единственную кнопку «Подключить кошелёк».
  */
 export function LoginGate({ children }: { children: React.ReactNode }) {
+  const t = useT();
   const [account, setAccount] = useState(getAccount());
   const [busy, setBusy] = useState(false);
   const [restoring, setRestoring] = useState(true);
@@ -26,7 +28,7 @@ export function LoginGate({ children }: { children: React.ReactNode }) {
         style={{ background: "linear-gradient(180deg, #6dc3e0 0%, #4ea7d4 60%, #3a8bbf 100%)" }}
       >
         <div className="text-5xl mb-2">🐝</div>
-        <div className="font-game text-[10px] text-yellow-200">Загрузка...</div>
+        <div className="font-game text-[10px] text-yellow-200">{t("welcome.title")}…</div>
       </div>
     );
   }
@@ -48,7 +50,7 @@ export function LoginGate({ children }: { children: React.ReactNode }) {
         <div className="text-center mb-5">
           <div className="text-5xl mb-2">🐝</div>
           <h1 className="font-game text-[14px] text-yellow-300">
-            Пчело-ферма
+            {t("welcome.title")}
           </h1>
         </div>
 
@@ -57,7 +59,7 @@ export function LoginGate({ children }: { children: React.ReactNode }) {
           disabled={busy}
           className="w-full font-game text-[10px] px-4 py-3 border-2 border-black bg-purple-700 text-yellow-200 hover:bg-purple-600 active:bg-purple-800 disabled:opacity-60"
         >
-          {busy ? "..." : "🦊 Подключить NEAR"}
+          {busy ? "..." : `🦊 ${t("welcome.connect")}`}
         </button>
       </div>
     </div>

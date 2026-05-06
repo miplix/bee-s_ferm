@@ -2,8 +2,10 @@ import { useStore } from "../../state/store";
 import { selectLevel, selectXpProgress } from "../../state/selectors";
 import { Progress } from "../shared/Progress";
 import { getCurrentSeason, daysLeftInSeason, SEASON_INFO } from "../../domain/seasons/seasons";
+import { useT } from "../../i18n/useT";
 
 export function Hud() {
+  const t = useT();
   const level = useStore(selectLevel);
   const xpProg = useStore(selectXpProgress);
   const coins = useStore((s) => s.coins);
@@ -31,7 +33,7 @@ export function Hud() {
       <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap min-w-0 flex-1">
         {/* Level + XP */}
         <div className="flex flex-col gap-0.5 min-w-[64px] sm:min-w-[80px]">
-          <span className="font-game text-[7px] sm:text-[8px] text-yellow-300">Lv.{level}</span>
+          <span className="font-game text-[7px] sm:text-[8px] text-yellow-300">{t("hud.level", { n: level })}</span>
           <Progress value={xpProg} color="bg-yellow-400" />
         </div>
 
@@ -48,8 +50,8 @@ export function Hud() {
           <button
             onClick={() => setPanel(activePanel === "pollen_topup" ? null : "pollen_topup" as any)}
             className="font-game text-[8px] leading-none px-1 py-0.5 bg-yellow-700 hover:bg-yellow-600 border border-black text-white"
-            title="Пополнить пыльцу (NEP-141 pollen.tkn.near)"
-            aria-label="Пополнить пыльцу"
+            title={t("hud.pollen_topup_title")}
+            aria-label={t("hud.pollen_topup_aria")}
           >+</button>
         </div>
 
@@ -62,9 +64,9 @@ export function Hud() {
         {/* Season */}
         <div className="flex items-center gap-1">
           <span className="text-sm">{seasonInfo.emoji}</span>
-          <span className={`font-game text-[7px] ${seasonInfo.color}`}>{seasonInfo.name}</span>
+          <span className={`font-game text-[7px] ${seasonInfo.color}`}>{t(`season.${season}`)}</span>
           {daysLeft !== Infinity && (
-            <span className="font-game text-[6px] text-white/40">{daysLeft}d</span>
+            <span className="font-game text-[6px] text-white/40">{t("days_left", { n: daysLeft })}</span>
           )}
         </div>
       </div>
@@ -75,40 +77,40 @@ export function Hud() {
           onClick={toggleMoveMode}
           className={`flex flex-col items-center px-2 py-0.5 border border-black/40 rounded
             ${moveMode ? "bg-orange-600 border-orange-400" : "bg-brown-600 hover:bg-brown-500"}`}
-          title="Move objects"
+          title={t("hud.move_title")}
         >
           <span className="text-sm leading-none">✋</span>
-          <span className="font-game text-[6px] text-white/70">Move</span>
+          <span className="font-game text-[6px] text-white/70">{t("hud.move")}</span>
         </button>
 
         <button
           onClick={() => setPanel(activePanel === "skills" ? null : "skills")}
           className={`flex flex-col items-center px-2 py-0.5 border border-black/40 rounded
             ${activePanel === "skills" ? "bg-brown-400" : "bg-brown-600 hover:bg-brown-500"}`}
-          title="Skills"
+          title={t("hud.skills_title")}
         >
           <span className="text-sm leading-none">&#x2B50;</span>
-          <span className="font-game text-[6px] text-white/70">Skills</span>
+          <span className="font-game text-[6px] text-white/70">{t("hud.skills")}</span>
         </button>
 
         <button
           onClick={() => setPanel(activePanel === "inventory" ? null : "inventory")}
           className={`flex flex-col items-center px-2 py-0.5 border border-black/40 rounded
             ${activePanel === "inventory" ? "bg-brown-400" : "bg-brown-600 hover:bg-brown-500"}`}
-          title="Inventory"
+          title={t("hud.inventory_title")}
         >
           <span className="text-sm leading-none">🎒</span>
-          <span className="font-game text-[6px] text-white/70">Инв</span>
+          <span className="font-game text-[6px] text-white/70">{t("hud.inventory")}</span>
         </button>
 
         <button
           onClick={() => setPanel(activePanel === "settings" ? null : "settings")}
           className={`flex flex-col items-center px-2 py-0.5 border border-black/40 rounded
             ${activePanel === "settings" ? "bg-brown-400" : "bg-brown-600 hover:bg-brown-500"}`}
-          title="Настройки"
+          title={t("hud.settings_title")}
         >
           <span className="text-sm leading-none">⚙️</span>
-          <span className="font-game text-[6px] text-white/70">Меню</span>
+          <span className="font-game text-[6px] text-white/70">{t("hud.settings")}</span>
         </button>
       </div>
     </div>
