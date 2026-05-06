@@ -149,7 +149,9 @@ function ItemRow({ id, qty, action }: { id: string; qty: number; action?: React.
       <span className="font-game text-[7px] text-white flex-1 truncate">
         {formatItemName(id)}
       </span>
-      <span className="font-game text-[8px] text-yellow-300 w-8 text-right">{qty}</span>
+      <span className="font-game text-[8px] text-yellow-300 w-12 text-right">
+        {qty.toFixed(2)}
+      </span>
       {action}
     </div>
   );

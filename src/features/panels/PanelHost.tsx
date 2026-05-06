@@ -18,9 +18,11 @@ import { CropMachinePanel } from "./CropMachinePanel";
 import { SettingsPanel } from "./SettingsPanel";
 import { DevPanel } from "./DevPanel";
 import { DailyRewardPopup } from "./DailyRewardPopup";
+import { PollenTopupModal } from "../near/PollenTopupModal";
 
 export function PanelHost() {
   const activePanel = useStore((s) => s.activePanel);
+  const setPanel = useStore((s) => s.setPanel);
 
   if (!activePanel) return null;
 
@@ -44,6 +46,7 @@ export function PanelHost() {
     case "settings":     return <SettingsPanel />;     // via HUD settings button
     case "dev":          return <DevPanel />;          // via D key (dev cheats)
     case "daily_reward": return <DailyRewardPopup />;  // via daily chest on island
+    case "pollen_topup": return <PollenTopupModal onClose={() => setPanel(null)} />; // via + рядом с балансом пыльцы
     default:             return null;
   }
 }

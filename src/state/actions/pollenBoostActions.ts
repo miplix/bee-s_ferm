@@ -1,8 +1,7 @@
 import type { GameState } from "../../domain/types/game";
 import { cellKey } from "../../domain/types/game";
 
-export const POLLEN_BOOST_DURATION_MS = 12 * 3600_000;  // 12 hours
-export const POLLEN_BOOST_MULT = 2;                     // x2 yield while active
+export const POLLEN_BOOST_MULT = 2;                     // ×2 yield on next harvest
 
 /** Cost to apply boost per cell type. */
 export const POLLEN_COST: Record<string, number> = {
@@ -11,7 +10,11 @@ export const POLLEN_COST: Record<string, number> = {
   fruit_patch: 10,
 };
 
-/** Apply pollen boost to a cell. Costs pollen depending on type. */
+/**
+ * Apply pollen boost to a cell.
+ * 1 пыльца = ×2 урожай на следующий сбор. Эффект **фиксированный** —
+ * не зависит от того когда применили (до посадки или после). Снимается на сборе.
+ */
 export function applyPollenBoost(state: GameState, cx: number, cy: number, now: number): GameState {
   const key = cellKey(cx, cy);
   const cell = state.cells[key];
@@ -24,10 +27,14 @@ export function applyPollenBoost(state: GameState, cx: number, cy: number, now: 
   if (cost == null) return state; // not boostable
   if ((state.pollen ?? 0) < cost) return state;
 
+  // Already boosted — don't double-charge
+  if (realCell.pollenBoostUntil && realCell.pollenBoostUntil > now) return state;
+
   const cells = { ...state.cells };
+  // Sentinel "until" — far future timestamp; boost holds until consumed at harvest
   cells[realKey] = {
     ...realCell,
-    pollenBoostUntil: now + POLLEN_BOOST_DURATION_MS,
+    pollenBoostUntil: Number.MAX_SAFE_INTEGER,
     pollenBoostStartedAt: now,
   };
 
@@ -40,25 +47,21 @@ export function applyPollenBoost(state: GameState, cx: number, cy: number, now: 
 }
 
 /**
- * Compute yield multiplier based on what fraction of grow time was under boost.
- * yield_final = base * (1 + (boostFraction × (POLLEN_BOOST_MULT - 1)))
+ * Multiplier applied at harvest. Fixed ×POLLEN_BOOST_MULT if boost is active.
+ * Boost is single-use — каждый вызов harvest{Crop,Fruit,Flower} должен очищать
+ * pollenBoostUntil/pollenBoostStartedAt.
  *
- * Example: if 50% of grow time was boosted, and boost gives ×2:
- *   multiplier = 1 + 0.5 × 1 = 1.5
+ * The signature keeps legacy params (plantedAt/growMs/etc.) for compatibility
+ * but they are unused — multiplier is fixed.
  */
 export function pollenProratedMultiplier(
-  plantedAt: number,
-  growMs: number,
+  _plantedAt: number,
+  _growMs: number,
   boostStartedAt: number | null | undefined,
   boostUntil: number | null | undefined,
-  harvestTime: number,
+  now: number,
 ): number {
   if (!boostStartedAt || !boostUntil) return 1;
-  const totalGrow = Math.min(harvestTime, plantedAt + growMs) - plantedAt;
-  if (totalGrow <= 0) return 1;
-  const boostStart = Math.max(plantedAt, boostStartedAt);
-  const boostEnd = Math.min(plantedAt + growMs, boostUntil, harvestTime);
-  const boostedTime = Math.max(0, boostEnd - boostStart);
-  const fraction = boostedTime / totalGrow;
-  return 1 + fraction * (POLLEN_BOOST_MULT - 1);
+  if (boostUntil <= now) return 1;
+  return POLLEN_BOOST_MULT;
 }

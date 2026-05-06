@@ -129,13 +129,18 @@ export function harvestFruit(
       fertilizerId: null,
       fertilizedAt: null,
       fertilizerUntil: null,
+      pollenBoostUntil: null,
+      pollenBoostStartedAt: null,
     };
   } else {
-    // Bush still has harvests remaining (fertilizer may persist if still active)
+    // Bush still has harvests remaining (fertilizer may persist if still active).
+    // Pollen boost is single-use — consumed by this harvest.
     cells[key] = {
       ...cell,
       fruitHarvestsLeft: harvestsLeft,
       lastFruitHarvest: now,
+      pollenBoostUntil: null,
+      pollenBoostStartedAt: null,
       ...clearedFert,
     };
   }

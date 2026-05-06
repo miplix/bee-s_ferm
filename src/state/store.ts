@@ -606,9 +606,10 @@ export const useStore = create<Store>()(
         const rawCell = s.cells[key];
         if (rawCell?.parentKey) key = rawCell.parentKey;
 
-        // Pollen boost mode
+        // Pollen boost mode — выход после первого клика (попадание или промах)
         if (s.pollenBoostMode) {
           get().applyPollenBoost(cx, cy);
+          set({ pollenBoostMode: false });
           return;
         }
 

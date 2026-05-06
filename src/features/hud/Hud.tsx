@@ -40,19 +40,25 @@ export function Hud() {
         </span>
       </div>
 
-      {/* Pollen */}
+      {/* Pollen + кнопка пополнения */}
       <div className="flex items-center gap-1">
         <img src="/icons/pollen.png" alt="" className="w-4 h-4" />
         <span className="font-game text-[8px] text-white">
-          {pollen.toFixed(0)}
+          {pollen.toFixed(2)}
         </span>
+        <button
+          onClick={() => setPanel(activePanel === "pollen_topup" ? null : "pollen_topup" as any)}
+          className="font-game text-[8px] leading-none px-1 py-0.5 bg-yellow-700 hover:bg-yellow-600 border border-black text-white"
+          title="Пополнить пыльцу (NEP-141 pollen.tkn.near)"
+          aria-label="Пополнить пыльцу"
+        >+</button>
       </div>
 
       {/* Gems */}
       <div className="flex items-center gap-1">
         <span className="text-sm">💎</span>
         <span className="font-game text-[8px] text-white">
-          {gems}
+          {gems.toFixed(2)}
         </span>
       </div>
 
