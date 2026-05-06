@@ -7,26 +7,21 @@ import { useTick } from "../../hooks/useTick";
 import { progress as calcProgress, fmtDuration, remaining, isReady } from "../../domain/time/time";
 import type { AnimalKind } from "../../domain/types/ids";
 import type { AnimalState } from "../../domain/types/game";
+import { useT } from "../../i18n/useT";
+import { getItemName } from "../../i18n/itemNames";
+import type { Language } from "../../i18n/types";
 
 function AnimalCard({
-  animal,
-  kind,
-  emoji,
-  wheat,
-  now,
-  feedAnimal,
-  collectAnimal,
-  sellAnimal,
+  animal, kind, emoji, wheat, now, feedAnimal, collectAnimal, sellAnimal, lang,
 }: {
-  animal: AnimalState;
-  kind: AnimalKind;
-  emoji: string;
-  wheat: number;
-  now: number;
+  animal: AnimalState; kind: AnimalKind; emoji: string;
+  wheat: number; now: number;
   feedAnimal: (id: string) => void;
   collectAnimal: (id: string) => void;
   sellAnimal: (id: string) => void;
+  lang: Language;
 }) {
+  const t = useT();
   const lvl = getAnimalLevel(kind, animal.xp);
   const producing = animal.lastFed > 0;
   const ready = producing && isReady(animal.lastFed, lvl.productionMs, now);
@@ -40,25 +35,25 @@ function AnimalCard({
         <span className="text-lg">{emoji}</span>
         <div className="flex-1">
           <div className="font-game text-[8px] text-white">
-            Ур.{lvl.level} | XP: {animal.xp}
+            {t("loc.lvl_xp", { n: lvl.level, xp: animal.xp })}
           </div>
           <div className="font-game text-[6px] text-white/50">
-            Даёт: {lvl.amount} {lvl.product} | Корм: {lvl.feedCost} пшеницы
+            {t("loc.gives", { n: lvl.amount, item: getItemName(lvl.product, lang), feed: `${lvl.feedCost} ${getItemName("wheat", lang)}` })}
           </div>
         </div>
 
         {!producing && !ready && (
           <PixelButton disabled={!canFeed} onClick={() => feedAnimal(animal.id)}>
-            Кормить
+            {t("loc.feed_btn")}
           </PixelButton>
         )}
         {ready && (
           <PixelButton onClick={() => collectAnimal(animal.id)}>
-            Собрать
+            {t("loc.collect")}
           </PixelButton>
         )}
         <PixelButton variant="danger" onClick={() => sellAnimal(animal.id)}>
-          Продать
+          {t("loc.sell")}
         </PixelButton>
       </div>
 
@@ -72,7 +67,7 @@ function AnimalCard({
       )}
       {ready && (
         <div className="font-game text-[7px] text-green-400 mt-1">
-          Готово!
+          {t("loc.ready")}
         </div>
       )}
     </div>
@@ -80,6 +75,8 @@ function AnimalCard({
 }
 
 export function BarnScreen() {
+  const t = useT();
+  const lang = useStore((s) => (s as any).language as Language) ?? "ru";
   useTick(1000);
   const animals = useStore((s) => s.animals);
   const inventory = useStore((s) => s.inventory);
@@ -113,99 +110,77 @@ export function BarnScreen() {
         <div className="flex items-center gap-2">
           <span className="text-2xl">🐄</span>
           <span className="font-game text-[12px] text-yellow-300">
-            Амбар Ур.{barnLevel} ({totalAnimals}/{capacity})
+            {t("loc.barn_title", { n: barnLevel, cur: totalAnimals, max: capacity })}
           </span>
         </div>
         <button
           onClick={() => setLocation("farm")}
           className="font-game text-[8px] text-yellow-300 underline"
         >
-          ← На ферму
+          {t("loc.back_to_farm")}
         </button>
       </div>
 
       <div className="mb-3 font-game text-[7px] text-white/60">
-        Пшеница: {wheat}
+        {t("loc.wheat_only", { n: wheat })}
       </div>
 
-      {/* Buy buttons */}
       <div className="flex gap-2 mb-4">
         <PixelButton
           disabled={totalAnimals >= capacity || coins < 200}
           onClick={() => buyAnimal("cow")}
         >
-          Купить корову (200м)
+          {t("loc.buy_cow")}
         </PixelButton>
         <PixelButton
           disabled={totalAnimals >= capacity || coins < 120}
           onClick={() => buyAnimal("sheep")}
         >
-          Купить овцу (120м)
+          {t("loc.buy_sheep")}
         </PixelButton>
       </div>
 
-      {/* Upgrade button */}
       {upgrade && (
         <div className="mb-4">
-          <PixelButton
-            disabled={!canUpgrade}
-            onClick={() => upgradeBuildingAction("barn")}
-          >
-            Улучшить до Ур.{upgrade.toLevel} (
-            {Object.entries(upgrade.cost)
-              .map(([r, n]) => `${n} ${r}`)
-              .join(", ")}
-            )
+          <PixelButton disabled={!canUpgrade} onClick={() => upgradeBuildingAction("barn")}>
+            {t("loc.upgrade_to", {
+              n: upgrade.toLevel,
+              cost: Object.entries(upgrade.cost).map(([r, n]) => `${n} ${getItemName(r, lang)}`).join(", "),
+            })}
           </PixelButton>
         </div>
       )}
 
-      {/* Cows section */}
       {cows.length > 0 && (
         <div className="mb-3">
-          <div className="font-game text-[9px] text-yellow-300 mb-1">Коровы</div>
+          <div className="font-game text-[9px] text-yellow-300 mb-1">{t("loc.cows_section")}</div>
           <div className="space-y-2">
             {cows.map((cow) => (
-              <AnimalCard
-                key={cow.id}
-                animal={cow}
-                kind="cow"
-                emoji="🐄"
-                wheat={wheat}
-                now={now}
-                feedAnimal={feedAnimal}
-                collectAnimal={collectAnimal}
-                sellAnimal={sellAnimal}
-              />
+              <AnimalCard key={cow.id} animal={cow} kind="cow" emoji="🐄"
+                wheat={wheat} now={now}
+                feedAnimal={feedAnimal} collectAnimal={collectAnimal} sellAnimal={sellAnimal}
+                lang={lang} />
             ))}
           </div>
         </div>
       )}
 
-      {/* Sheep section */}
       {sheep.length > 0 && (
         <div className="mb-3">
-          <div className="font-game text-[9px] text-yellow-300 mb-1">Овцы</div>
+          <div className="font-game text-[9px] text-yellow-300 mb-1">{t("loc.sheep_section")}</div>
           <div className="space-y-2">
-            {sheep.map((s) => (
-              <AnimalCard
-                key={s.id}
-                animal={s}
-                kind="sheep"
-                emoji="🐑"
-                wheat={wheat}
-                now={now}
-                feedAnimal={feedAnimal}
-                collectAnimal={collectAnimal}
-                sellAnimal={sellAnimal}
-              />
+            {sheep.map((sh) => (
+              <AnimalCard key={sh.id} animal={sh} kind="sheep" emoji="🐑"
+                wheat={wheat} now={now}
+                feedAnimal={feedAnimal} collectAnimal={collectAnimal} sellAnimal={sellAnimal}
+                lang={lang} />
             ))}
           </div>
         </div>
       )}
 
       {totalAnimals === 0 && (
-        <p className="font-game text-[8px] text-white/50">Нет животных. Купите корову или овцу!</p>
+        <p className="font-game text-[8px] text-white/50">{t("loc.no_animals")}</p>
       )}
     </div>
   );
