@@ -156,12 +156,10 @@ export function sell(
       if (ghCrop) {
         price = ghCrop.sellPrice;
       } else {
-        // Цены ресурсов: wood=10 (база), остальное пропорционально редкости.
-        // (Старые deflation-цены × 500. Добавлены crimstone/oil/obsidian/sunstone.)
+        // Deflationary prices: selling resources is very unfavorable vs using for expansion
         const RESOURCE_SELL: Record<string, number> = {
-          wood: 10, stone: 25, iron: 100, gold: 500,
-          crimstone: 800, oil: 600, obsidian: 1500, sunstone: 3000,
-          egg: 150, milk: 400, wool: 250, honey: 2500,
+          wood: 0.02, stone: 0.05, iron: 0.20, gold: 1.00,
+          egg: 0.30, milk: 0.80, wool: 0.50, honey: 5.00,
         };
         price = RESOURCE_SELL[itemId] ?? 0;
       }
@@ -169,11 +167,6 @@ export function sell(
   }
 
   if (price <= 0) return state;
-
-  // Faction Sunflorian: +10% монет с продажи
-  if (state.faction === "sunflorian") {
-    price = price * 1.10;
-  }
 
   const inv = { ...state.inventory };
   inv[itemId] = current - qty;

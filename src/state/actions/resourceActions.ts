@@ -4,7 +4,7 @@ import { RESOURCE_NODES } from "../../data/resourceNodes.data";
 import { toolForNode } from "../../data/tools.data";
 import { isReady } from "../../domain/time/time";
 import { getActiveBoosts } from "../../domain/skills/skillEngine";
-import { skillEffectsToBoosts, aggregateBoosts, applyBoost, factionToBoostEffects } from "../../domain/boosts/engine";
+import { skillEffectsToBoosts, aggregateBoosts, applyBoost } from "../../domain/boosts/engine";
 
 /** If no hit for 5 seconds, reset progress. */
 const HIT_IDLE_RESET_MS = 5_000;
@@ -71,12 +71,9 @@ export function gatherNode(
     if (inv[toolId]! <= 0) delete inv[toolId];
   }
 
-  // Drop resource (apply skill + faction boosts; Goblin: +10% wood/stone/iron/gold)
+  // Drop resource (apply skill boosts)
   const skillEffects = getActiveBoosts(state.skills);
-  const boosts = aggregateBoosts([
-    ...skillEffectsToBoosts(skillEffects),
-    ...factionToBoostEffects(state.faction ?? null),
-  ]);
+  const boosts = aggregateBoosts(skillEffectsToBoosts(skillEffects));
   const boostedDrop = Math.floor(applyBoost(nodeDef.dropAmount, nodeDef.resource, boosts));
   inv[nodeDef.resource] = (inv[nodeDef.resource] ?? 0) + boostedDrop;
 

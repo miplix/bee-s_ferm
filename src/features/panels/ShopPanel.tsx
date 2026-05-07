@@ -15,18 +15,14 @@ import type { Language } from "../../i18n/types";
 type Tab = "seeds" | "fruits" | "flowers" | "greenhouse" | "sell";
 
 const RESOURCE_SELL: Record<string, { price: number; icon: string }> = {
-  wood:      { price: 10,   icon: "🪵" },
-  stone:     { price: 25,   icon: "🪨" },
-  iron:      { price: 100,  icon: "⛓️" },
-  gold:      { price: 500,  icon: "✨" },
-  crimstone: { price: 800,  icon: "🔴" },
-  oil:       { price: 600,  icon: "🛢️" },
-  obsidian:  { price: 1500, icon: "⬛" },
-  sunstone:  { price: 3000, icon: "🟡" },
-  egg:       { price: 150,  icon: "🥚" },
-  milk:      { price: 400,  icon: "🥛" },
-  wool:      { price: 250,  icon: "🧶" },
-  honey:     { price: 2500, icon: "🍯" },
+  wood:  { price: 0.02, icon: "🪵" },
+  stone: { price: 0.05, icon: "🪨" },
+  iron:  { price: 0.20, icon: "⛓️" },
+  gold:  { price: 1.00, icon: "✨" },
+  egg:   { price: 0.30, icon: "🥚" },
+  milk:  { price: 0.80, icon: "🥛" },
+  wool:  { price: 0.50, icon: "🧶" },
+  honey: { price: 5.00, icon: "🍯" },
 };
 
 export function ShopPanel() {

@@ -412,16 +412,8 @@ export function FarmView() {
             const noRight  = lx === BLOCK_SIZE - 1    && !blockSet.has(`${bx + 1},${by}`);
             const R = 14;
             const cornerRadius = `${noTop && noLeft ? R : 0}px ${noTop && noRight ? R : 0}px ${noBottom && noRight ? R : 0}px ${noBottom && noLeft ? R : 0}px`;
-            // Под постройками траву не показываем — здание полностью покрывает свой
-            // 1×1 или 2×2 footprint (родитель + дети). Иначе из-под прозрачных пикселей
-            // спрайта здания видна трава, что выглядит как «недостроено».
-            const isBuildingFootprint = cell.type === "building"
-              || (cell.parentKey && cells[cell.parentKey]?.type === "building");
-            const wrapperStyle = isBuildingFootprint
-              ? { borderRadius: cornerRadius, background: "#3a2a15" }
-              : { ...grassStyle, borderRadius: cornerRadius };
             return (
-              <div key={`${gx}-${gy}`} style={wrapperStyle}>
+              <div key={`${gx}-${gy}`} style={{ ...grassStyle, borderRadius: cornerRadius }}>
                 <CellView cell={cell} cx={cx} cy={cy}
                   onClick={() => guardedClick(cx, cy)} selectedTool={selectedTool}
                   moveMode={moveMode} moveSource={moveSource}
