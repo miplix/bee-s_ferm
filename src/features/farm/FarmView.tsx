@@ -412,8 +412,18 @@ export function FarmView() {
             const noRight  = lx === BLOCK_SIZE - 1    && !blockSet.has(`${bx + 1},${by}`);
             const R = 14;
             const cornerRadius = `${noTop && noLeft ? R : 0}px ${noTop && noRight ? R : 0}px ${noBottom && noRight ? R : 0}px ${noBottom && noLeft ? R : 0}px`;
+            // Под постройками траву не рисуем (грязевой fill #3a2a15) — иначе
+            // из-под прозрачных пикселей спрайта здания видна трава.
+            // ВАЖНО: cell может быть null (пустое поле в блоке) → null-check обязателен.
+            const parent = cell?.parentKey ? cells[cell.parentKey] : null;
+            const isBuildingFootprint = !!cell && (
+              cell.type === "building" || parent?.type === "building"
+            );
+            const wrapperStyle: React.CSSProperties = isBuildingFootprint
+              ? { borderRadius: cornerRadius, background: "#3a2a15" }
+              : { ...grassStyle, borderRadius: cornerRadius };
             return (
-              <div key={`${gx}-${gy}`} style={{ ...grassStyle, borderRadius: cornerRadius }}>
+              <div key={`${gx}-${gy}`} style={wrapperStyle}>
                 <CellView cell={cell} cx={cx} cy={cy}
                   onClick={() => guardedClick(cx, cy)} selectedTool={selectedTool}
                   moveMode={moveMode} moveSource={moveSource}

@@ -70,16 +70,17 @@ export function completeMove(
   // Move the cell
   const cells = { ...state.cells };
   const sourceCell = cells[state.moveSource];
-  if (!sourceCell) return { ...state, moveSource: null, moveMode: false };
+  if (!sourceCell) return { ...state, moveSource: null };
 
   delete cells[state.moveSource];
   cells[targetKey] = sourceCell;
 
+  // moveMode остаётся включённым — пользователь может перемещать ещё.
+  // Выключение только через явный toggle ✋ или cancelMove.
   return {
     ...state,
     cells,
     moveSource: null,
-    moveMode: false,
   };
 }
 

@@ -6,7 +6,7 @@ import { getLevel } from "../../domain/level/level";
 import { elapsed } from "../../domain/time/time";
 import { getCurrentSeason, isCropInSeason } from "../../domain/seasons/seasons";
 import { getActiveBoosts } from "../../domain/skills/skillEngine";
-import { skillEffectsToBoosts, aggregateBoosts, applyBoostWithSub, applyBoost } from "../../domain/boosts/engine";
+import { skillEffectsToBoosts, aggregateBoosts, applyBoostWithSub, applyBoost, factionToBoostEffects } from "../../domain/boosts/engine";
 import { pollenProratedMultiplier } from "./pollenBoostActions";
 import { fertilizerProratedMultiplier } from "./compostActions";
 import { mulberry32 } from "../../domain/rng/prng";
@@ -42,9 +42,12 @@ export function plant(
     if (!isCropInSeason(crop.seasons, season)) return state;
   }
 
-  // Compute boosted grow time from skills
+  // Compute boosted grow time from skills + faction
   const skillEffects = getActiveBoosts(state.skills);
-  const boosts = aggregateBoosts(skillEffectsToBoosts(skillEffects));
+  const boosts = aggregateBoosts([
+    ...skillEffectsToBoosts(skillEffects),
+    ...factionToBoostEffects(state.faction ?? null),
+  ]);
   const effectiveGrowMs = Math.round(
     applyBoostWithSub(crop.growMs, "crop_grow", cropId, boosts),
   );
@@ -75,9 +78,12 @@ export function harvest(
   const growMs = cell.effectiveGrowMs ?? crop.growMs;
   if (elapsed(cell.plantedAt, now) < growMs) return state;
 
-  // Compute boosted harvest yield from skills
+  // Compute boosted harvest yield from skills + faction (Bumpkin: +10% crop_yield)
   const skillEffects = getActiveBoosts(state.skills);
-  const boosts = aggregateBoosts(skillEffectsToBoosts(skillEffects));
+  const boosts = aggregateBoosts([
+    ...skillEffectsToBoosts(skillEffects),
+    ...factionToBoostEffects(state.faction ?? null),
+  ]);
   let harvestAmount = applyBoost(crop.harvestCount, "crop_yield", boosts);
 
   // Fertilizer (sprout_mix) prorated multiplier — same model as pollen boost
