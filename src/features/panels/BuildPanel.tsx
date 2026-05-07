@@ -11,7 +11,8 @@ type Tab = "tools" | "buildings";
 
 export function BuildPanel() {
   const t = useT();
-  const [tab, setTab] = useState<Tab>("tools");
+  // Default tab — «Постройки»: пользователи ищут здания тут, а не «Инструменты».
+  const [tab, setTab] = useState<Tab>("buildings");
   const level = useStore(selectLevel);
   const buildings = useStore((s) => s.buildings);
   const inventory = useStore((s) => s.inventory);
