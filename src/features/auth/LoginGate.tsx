@@ -5,6 +5,28 @@ import { pullSave, schedulePush } from "../../lib/supabase/sync";
 import { useStore } from "../../state/store";
 
 /**
+ * Dev-bypass: `?dev=1` в URL → пропускает gate без кошелька.
+ * Полезно для тестирования механик локально. Облачный sync не запускается
+ * (pushSave проверяет getAccount() — он null), всё в localStorage.
+ * После закрытия dev-режима добавляешь `?dev=0` или чистишь URL-param.
+ */
+function isDevBypass(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const p = new URLSearchParams(window.location.search);
+    if (p.get("dev") === "1") {
+      sessionStorage.setItem("dev_bypass", "1");
+      return true;
+    }
+    if (p.get("dev") === "0") {
+      sessionStorage.removeItem("dev_bypass");
+      return false;
+    }
+    return sessionStorage.getItem("dev_bypass") === "1";
+  } catch { return false; }
+}
+
+/**
  * Полноэкранный gate — пока NEAR-кошелёк не подключён, игра скрыта.
  * После подключения кошелька: pull облачного сейва (cross-device) → showChildren.
  * Если облачный сейв новее локального, перетираем state.
@@ -15,6 +37,7 @@ export function LoginGate({ children }: { children: React.ReactNode }) {
   const [busy, setBusy] = useState(false);
   const [restoring, setRestoring] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const devBypass = isDevBypass();
 
   useEffect(() => {
     initNear();
@@ -57,6 +80,18 @@ export function LoginGate({ children }: { children: React.ReactNode }) {
     })();
     return () => { cancelled = true; };
   }, [account]);
+
+  // DEV BYPASS — играем без кошелька (только localStorage)
+  if (devBypass) {
+    return (
+      <>
+        <div style={{ position: "fixed", top: 0, left: 0, zIndex: 9999, background: "rgba(255,80,80,0.8)", color: "white", fontFamily: "monospace", fontSize: 10, padding: "2px 6px" }}>
+          DEV BYPASS — без кошелька, без cloud sync. Сними <code>?dev=0</code> чтобы выключить.
+        </div>
+        {children}
+      </>
+    );
+  }
 
   if (account && !syncing) return <>{children}</>;
   if (account && syncing) {
